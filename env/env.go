@@ -6,8 +6,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Load() error {
-	return godotenv.Load()
+func Load(filenames ...string) error {
+	return godotenv.Load(filenames...)
 }
 
 func Get(key string) string {
