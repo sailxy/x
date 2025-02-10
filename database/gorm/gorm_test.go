@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sailwith/x/logger"
+	"github.com/sailxy/x/logger"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )

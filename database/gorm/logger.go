@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	xlogger "github.com/sailwith/x/logger"
+	xlogger "github.com/sailxy/x/logger"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

@@ -1,4 +1,4 @@
 # Install
 ```
-go get github.com/sailwith/x
+go get github.com/sailxy/x
 ```

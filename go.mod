@@ -1,4 +1,4 @@
-module github.com/sailwith/x
+module github.com/sailxy/x
 
 go 1.22
 
