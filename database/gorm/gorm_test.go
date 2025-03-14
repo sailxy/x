@@ -9,11 +9,12 @@ import (
 	"gorm.io/gorm"
 )
 
-const dsn = "root:root@tcp(127.0.0.1:3306)/db?charset=utf8mb4&parseTime=True&loc=Local"
+const mySQLDSN = "root:root@tcp(127.0.0.1:3306)/mysql?charset=utf8mb4&parseTime=True&loc=Local"
+const postgreSQLDSN = "host=localhost user=postgres password=postgres dbname=user_service port=5432 sslmode=disable TimeZone=Asia/Shanghai"
 
-func TestNew(t *testing.T) {
-	db, err := New(Config{
-		DSN: dsn,
+func TestNewMySQL(t *testing.T) {
+	db, err := NewMySQL(Config{
+		DSN: mySQLDSN,
 	})
 	if assert.NoError(t, err) {
 		t.Log(db.Name())
@@ -21,12 +22,22 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestNewWithLogger(t *testing.T) {
+func TestNewMySQLWithLogger(t *testing.T) {
 	cl, err := newCustomLogger()
 	assert.NoError(t, err)
-	db, err := New(Config{
-		DSN:    dsn,
+	db, err := NewMySQL(Config{
+		DSN:    mySQLDSN,
 		Logger: cl,
+	})
+	if assert.NoError(t, err) {
+		t.Log(db.Name())
+		printSQL(db)
+	}
+}
+
+func TestNewPostgreSQL(t *testing.T) {
+	db, err := NewPostgreSQL(Config{
+		DSN: postgreSQLDSN,
 	})
 	if assert.NoError(t, err) {
 		t.Log(db.Name())
@@ -41,5 +52,5 @@ func printSQL(db *gorm.DB) {
 	var u user
 	ctx := context.Background()
 	ctx = logger.SetTraceID(ctx, "123456")
-	db.WithContext(ctx).Raw("select * from user where id = 1").Scan(&u)
+	db.WithContext(ctx).Raw("select * from users where id = 1").Scan(&u)
 }

@@ -33,5 +33,5 @@ func TestLogPrint(t *testing.T) {
 	}, nil)
 	cl.Trace(ctx, time.Now(), func() (sql string, rowsAffected int64) {
 		return "select * from user", 1
-	}, errors.New("sql error"))
+	}, errors.New("test sql error"))
 }

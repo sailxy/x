@@ -13,7 +13,7 @@ func NewRandomNumber(length int) (int, error) {
 	// Calculate the lower and upper bounds for the number of the specified length.
 	lower := 1
 	upper := 1
-	for i := 0; i < length; i++ {
+	for i := range length {
 		upper *= 10
 		if i > 0 {
 			lower *= 10
