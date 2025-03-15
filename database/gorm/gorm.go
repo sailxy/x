@@ -8,6 +8,7 @@ import (
 )
 
 type DB = gorm.DB
+type Model = gorm.Model
 
 type Config struct {
 	DSN    string
