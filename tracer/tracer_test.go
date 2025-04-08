@@ -2,22 +2,22 @@ package tracer
 
 import "testing"
 
-func TestInit(t *testing.T) {
+func TestInitStdoutTracer(t *testing.T) {
 	tests := []struct {
 		name    string
-		config  Config
+		config  StdoutConfig
 		wantErr bool
 	}{
 		{
 			name: "valid config",
-			config: Config{
+			config: StdoutConfig{
 				ServiceName: "test-service",
 			},
 			wantErr: false,
 		},
 		{
 			name: "empty service name",
-			config: Config{
+			config: StdoutConfig{
 				ServiceName: "",
 			},
 			wantErr: false,
@@ -26,7 +26,7 @@ func TestInit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Init(tt.config)
+			err := InitStdoutTracer(tt.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
