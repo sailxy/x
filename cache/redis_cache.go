@@ -11,7 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisCacheConfig struct {
+type Config struct {
 	Addr string
 }
 
@@ -19,7 +19,7 @@ type RedisCache struct {
 	cache *cache.Cache[string]
 }
 
-func NewRedisCache(c RedisCacheConfig) *RedisCache {
+func NewRedisCache(c Config) *RedisCache {
 	rs := redisstore.NewRedis(redis.NewClient(&redis.Options{
 		Addr: c.Addr,
 	}))

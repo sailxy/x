@@ -14,7 +14,7 @@ const (
 )
 
 func newRedisCache() *RedisCache {
-	return NewRedisCache(RedisCacheConfig{
+	return NewRedisCache(Config{
 		Addr: "localhost:6379",
 	})
 }
