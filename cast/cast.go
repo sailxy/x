@@ -1,6 +1,10 @@
 package cast
 
-import "github.com/spf13/cast"
+import (
+	"encoding/json"
+
+	"github.com/spf13/cast"
+)
 
 func ToBool(v any) bool {
 	return cast.ToBool(v)
@@ -8,6 +12,15 @@ func ToBool(v any) bool {
 
 func ToString(v any) string {
 	return cast.ToString(v)
+}
+
+// ToJSONString converts any struct to JSON string.
+func ToJSONString(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func ToInt(v any) int {
