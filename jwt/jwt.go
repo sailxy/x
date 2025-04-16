@@ -32,6 +32,10 @@ func (j *JWT) NewWithClaims(claims map[string]any) (string, error) {
 }
 
 func (j *JWT) Parse(tokenString string) (map[string]any, error) {
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
 	mc := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, &mc, func(t *jwt.Token) (interface{}, error) {
 		return j.secret, nil
