@@ -38,3 +38,7 @@ func ToInt64(v any) int64 {
 func ToUInt64(v any) uint64 {
 	return cast.ToUint64(v)
 }
+
+func ToIntSlice(v any) []int {
+	return cast.ToIntSlice(v)
+}

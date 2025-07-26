@@ -47,3 +47,8 @@ func TestToUInt64(t *testing.T) {
 	r := ToUInt64("1444784865584")
 	assert.Equal(t, uint64(1444784865584), r)
 }
+
+func TestToIntSlice(t *testing.T) {
+	r := ToIntSlice([]int32{1, 2, 3})
+	assert.Equal(t, []int{1, 2, 3}, r)
+}
