@@ -52,3 +52,8 @@ func TestToIntSlice(t *testing.T) {
 	r := ToIntSlice([]int32{1, 2, 3})
 	assert.Equal(t, []int{1, 2, 3}, r)
 }
+
+func TestToInt32Slice(t *testing.T) {
+	r := ToInt32Slice([]int{1, 2, 3})
+	assert.Equal(t, []int32{1, 2, 3}, r)
+}

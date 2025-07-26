@@ -42,3 +42,12 @@ func ToUInt64(v any) uint64 {
 func ToIntSlice(v any) []int {
 	return cast.ToIntSlice(v)
 }
+
+func ToInt32Slice(v any) []int32 {
+	intsli := cast.ToIntSlice(v)
+	int32sli := make([]int32, len(intsli))
+	for i, v := range intsli {
+		int32sli[i] = int32(v)
+	}
+	return int32sli
+}
