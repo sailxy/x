@@ -59,3 +59,29 @@ func TestGetAccessToken(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUserInfo(t *testing.T) {
+	w := newWechatOpenPlatform()
+
+	tests := []struct {
+		name        string
+		accessToken string
+		openID      string
+		wantErr     bool
+	}{
+		{"basic", "access_token_123", "openid_123", false},
+		{"invalid_access_token", "invalid_access_token", "openid_123", true},
+		{"invalid_openid", "access_token_123", "invalid_openid", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := w.GetUserInfo(tt.accessToken, tt.openID)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else if assert.NoError(t, err) {
+				t.Log(got)
+			}
+		})
+	}
+}

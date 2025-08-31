@@ -35,8 +35,20 @@ type getAccessTokenResp struct {
 	UnionID      string `json:"unionid"`
 }
 
+type getUserInfoResp struct {
+	OpenID     string `json:"openid"`
+	Nickname   string `json:"nickname"`
+	Sex        int    `json:"sex"`
+	Province   string `json:"province"`
+	City       string `json:"city"`
+	Country    string `json:"country"`
+	HeadImgURL string `json:"headimgurl"`
+	UnionID    string `json:"unionid"`
+}
+
 const openPlatformQRConnectURL = "https://open.weixin.qq.com/connect/qrconnect"
 const openPlatformGetAccessTokenURL = "https://api.weixin.qq.com/sns/oauth2/access_token"
+const openPlatformGetUserInfoURL = "https://api.weixin.qq.com/sns/userinfo"
 
 // NewWechatOpenPlatform create a new wechat open platform instance.
 func NewWechatOpenPlatform(c Config) *WechatOpenPlatform {
@@ -97,6 +109,42 @@ func (w *WechatOpenPlatform) GetAccessToken(code string) (*getAccessTokenResp, e
 
 	// Parse response.
 	var respData getAccessTokenResp
+	err = json.Unmarshal(resp.Bytes(), &respData)
+	if err != nil {
+		return nil, err
+	}
+	return &respData, nil
+}
+
+// GetUserInfo get user info through access_token and openid.
+func (w *WechatOpenPlatform) GetUserInfo(accessToken, openID string) (*getUserInfoResp, error) {
+	u, err := url.Parse(openPlatformGetUserInfoURL)
+	if err != nil {
+		return nil, err
+	}
+
+	q := url.Values{}
+	q.Set("access_token", accessToken)
+	q.Set("openid", openID)
+
+	u.RawQuery = q.Encode()
+	resp, err := w.client.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
+
+	// Check error first.
+	var errResp errResp
+	err = json.Unmarshal(resp.Bytes(), &errResp)
+	if err != nil {
+		return nil, err
+	}
+	if errResp.ErrCode != 0 {
+		return nil, fmt.Errorf("errcode: %d, errmsg: %s, rid: %s", errResp.ErrCode, errResp.ErrMsg, errResp.RID)
+	}
+
+	// Parse response.
+	var respData getUserInfoResp
 	err = json.Unmarshal(resp.Bytes(), &respData)
 	if err != nil {
 		return nil, err
