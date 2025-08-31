@@ -1,24 +1,18 @@
 package oss
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	endpoint        = "oss-cn-shanghai.aliyuncs.com"
-	bucketName      = ""
-	accessKeyID     = ""
-	accessKeySecret = ""
-)
-
 func new() (*Client, error) {
 	return New(Config{
-		Endpoint:        endpoint,
-		BucketName:      bucketName,
-		AccessKeyID:     accessKeyID,
-		AccessKeySecret: accessKeySecret,
+		Endpoint:        os.Getenv("OSS_ENDPOINT"),
+		BucketName:      os.Getenv("OSS_BUCKET"),
+		AccessKeyID:     os.Getenv("OSS_ACCESS_KEY_ID"),
+		AccessKeySecret: os.Getenv("OSS_ACCESS_KEY_SECRET"),
 	})
 }
 
