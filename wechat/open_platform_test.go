@@ -7,7 +7,7 @@ import (
 )
 
 func TestQRConnect_BuildsExpectedURL(t *testing.T) {
-	c := &Config{AppID: "appid_123"}
+	c := Config{AppID: "appid_123"}
 	w := NewWechatOpenPlatform(c)
 
 	tests := []struct {

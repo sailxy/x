@@ -15,7 +15,7 @@ type WechatOpenPlatform struct {
 const openPlatformQRConnectURL = "https://open.weixin.qq.com/connect/qrconnect"
 
 // NewWechatOpenPlatform create a new wechat open platform instance.
-func NewWechatOpenPlatform(c *Config) *WechatOpenPlatform {
+func NewWechatOpenPlatform(c Config) *WechatOpenPlatform {
 	return &WechatOpenPlatform{
 		appID: c.AppID,
 	}
