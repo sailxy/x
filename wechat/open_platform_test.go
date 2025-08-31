@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestQRConnect_BuildsExpectedURL(t *testing.T) {
+func TestQRConnect(t *testing.T) {
 	c := Config{AppID: "appid_123"}
 	w := NewWechatOpenPlatform(c)
 
