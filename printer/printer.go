@@ -6,7 +6,7 @@ import (
 )
 
 func Print(s ...any) {
-	pp.Println(s...)
+	_, _ = pp.Println(s...)
 }
 
 func Error(s ...any) {

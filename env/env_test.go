@@ -12,7 +12,7 @@ func TestLoad(t *testing.T) {
 	content := []byte("TEST_KEY=test_value\n")
 	err := os.WriteFile(".env", content, 0644)
 	assert.NoError(t, err, "Failed to create test .env file")
-	defer os.Remove(".env")
+	defer func() { _ = os.Remove(".env") }()
 
 	// Test Load function
 	err = Load()
@@ -26,8 +26,9 @@ func TestLoad(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	// Set up test environment variable
-	os.Setenv("TEST_ENV_KEY", "test_env_value")
-	defer os.Unsetenv("TEST_ENV_KEY")
+	err := os.Setenv("TEST_ENV_KEY", "test_env_value")
+	assert.NoError(t, err)
+	defer func() { _ = os.Unsetenv("TEST_ENV_KEY") }()
 
 	// Test Get function
 	expected := "test_env_value"

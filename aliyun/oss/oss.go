@@ -119,7 +119,10 @@ func (c *Client) PostInfo(dir string) (*policyToken, error) {
 	}
 	debyte := base64.StdEncoding.EncodeToString(result)
 	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(c.accessKeySecret))
-	io.WriteString(h, debyte)
+	_, err = io.WriteString(h, debyte)
+	if err != nil {
+		return nil, err
+	}
 	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	var policyToken policyToken

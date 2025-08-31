@@ -11,7 +11,7 @@ func TestCreateFile(t *testing.T) {
 	path := "/tmp/tmpfile"
 	f, err := CreateFile(path)
 	assert.NoError(t, err)
-	defer os.RemoveAll(path)
+	defer func() { _ = os.RemoveAll(path) }()
 	t.Log(f.Name())
 }
 

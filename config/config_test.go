@@ -31,7 +31,7 @@ func TestLoad(t *testing.T) {
 	filename, err := createTempFile()
 	assert.NoError(t, err)
 	t.Log(filename)
-	defer os.Remove(filename)
+	defer func() { _ = os.Remove(filename) }()
 
 	data := struct {
 		Name string

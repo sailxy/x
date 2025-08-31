@@ -16,7 +16,7 @@ func TestLock(t *testing.T) {
 
 	lock, err := locker.Lock(ctx, "test", 60*time.Second, nil)
 	assert.NoError(t, err)
-	defer lock.Unlock(ctx)
+	defer func() { _ = lock.Unlock(ctx) }()
 
 	_, err = locker.Lock(ctx, "test", 60*time.Second, nil)
 	assert.Error(t, err)
@@ -30,7 +30,7 @@ func TestTTL(t *testing.T) {
 
 	lock, err := locker.Lock(ctx, "test", 60*time.Second, nil)
 	assert.NoError(t, err)
-	defer lock.Unlock(ctx)
+	defer func() { _ = lock.Unlock(ctx) }()
 
 	time.Sleep(5 * time.Second)
 	d, err := lock.TTL(ctx)
@@ -47,7 +47,7 @@ func TestSetTTL(t *testing.T) {
 
 	lock, err := locker.Lock(ctx, "test", 60*time.Second, nil)
 	assert.NoError(t, err)
-	defer lock.Unlock(ctx)
+	defer func() { _ = lock.Unlock(ctx) }()
 
 	time.Sleep(5 * time.Second)
 	d, err := lock.TTL(ctx)
