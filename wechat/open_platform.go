@@ -8,6 +8,12 @@ import (
 	"github.com/sailxy/x/rest"
 )
 
+const (
+	openPlatformQRConnectURL      = "https://open.weixin.qq.com/connect/qrconnect"
+	openPlatformGetAccessTokenURL = "https://api.weixin.qq.com/sns/oauth2/access_token"
+	openPlatformGetUserInfoURL    = "https://api.weixin.qq.com/sns/userinfo"
+)
+
 type Config struct {
 	AppID     string
 	AppSecret string
@@ -45,10 +51,6 @@ type getUserInfoResp struct {
 	HeadImgURL string `json:"headimgurl"`
 	UnionID    string `json:"unionid"`
 }
-
-const openPlatformQRConnectURL = "https://open.weixin.qq.com/connect/qrconnect"
-const openPlatformGetAccessTokenURL = "https://api.weixin.qq.com/sns/oauth2/access_token"
-const openPlatformGetUserInfoURL = "https://api.weixin.qq.com/sns/userinfo"
 
 // NewWechatOpenPlatform create a new wechat open platform instance.
 func NewWechatOpenPlatform(c Config) *WechatOpenPlatform {
