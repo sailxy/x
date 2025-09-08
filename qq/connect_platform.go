@@ -56,6 +56,7 @@ type getUserInfoResp struct {
 	FigureURL    string `json:"figureurl"`      // The URL of the QQ space avatar of 30×30 pixels.
 	FigureURL1   string `json:"figureurl_1"`    // The URL of the QQ space avatar of 50×50 pixels.
 	FigureURL2   string `json:"figureurl_2"`    // The URL of the QQ space avatar of 100×100 pixels.
+	FigureURLQQ  string `json:"figureurl_qq"`   // The URL of the QQ avatar.
 	FigureURLQQ1 string `json:"figureurl_qq_1"` // The URL of the QQ avatar of 40×40 pixels.
 	FigureURLQQ2 string `json:"figureurl_qq_2"` // The URL of the QQ avatar of 100×100 pixels.
 }
