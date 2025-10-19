@@ -9,7 +9,8 @@ import (
 
 func TestNew(t *testing.T) {
 	rds := New(Config{
-		Addr: "localhost:6379",
+		Addr:     "localhost:6379",
+		Password: "",
 	})
 	s, err := rds.Ping(context.Background()).Result()
 	assert.NoError(t, err)
