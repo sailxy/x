@@ -17,6 +17,7 @@ require (
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/eko/gocache/lib/v4 v4.1.6
 	github.com/eko/gocache/store/redis/v4 v4.2.2
+	github.com/gofrs/uuid/v5 v5.4.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/gookit/color v1.5.4
 	github.com/gookit/goutil v0.6.16
