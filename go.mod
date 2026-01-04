@@ -14,6 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.34.3
 	github.com/brianvoe/gofakeit/v7 v7.0.4
 	github.com/bsm/redislock v0.9.4
+	github.com/bwmarrin/snowflake v0.3.0
 	github.com/eko/gocache/lib/v4 v4.1.6
 	github.com/eko/gocache/store/redis/v4 v4.2.2
 	github.com/golang-jwt/jwt/v5 v5.2.1
