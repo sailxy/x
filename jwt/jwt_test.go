@@ -60,7 +60,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			name:    "token with wrong signature",
-			token:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.wrong-signature",
+			token:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.wrong-signature", // gitleaks:allow
 			wantErr: true,
 		},
 		{
