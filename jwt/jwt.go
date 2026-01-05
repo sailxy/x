@@ -37,9 +37,10 @@ func (j *JWT) Parse(tokenString string) (map[string]any, error) {
 	}
 
 	mc := jwt.MapClaims{}
+	// Go default json parser will parse number as float64, so we need to use json.Number to parse it.
 	token, err := jwt.ParseWithClaims(tokenString, &mc, func(t *jwt.Token) (interface{}, error) {
 		return j.secret, nil
-	})
+	}, jwt.WithJSONNumber())
 	if err != nil {
 		return nil, fmt.Errorf("parse token error: %w", err)
 	}

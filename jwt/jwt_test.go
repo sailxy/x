@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -27,6 +28,15 @@ func TestNew(t *testing.T) {
 	c, err := j.Parse(token)
 	assert.NoError(t, err)
 	t.Log(c)
+
+	// convert number to json.Number to keep the precision.
+	userID, ok := c["data"].(map[string]any)["user_id"].(json.Number)
+	assert.True(t, ok)
+	assert.Equal(t, "1", userID.String())
+
+	id, err := userID.Int64()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), id)
 }
 func TestParse(t *testing.T) {
 	j := New(Config{
@@ -56,8 +66,7 @@ func TestParse(t *testing.T) {
 		{
 			name: "valid token",
 			token: func() string {
-				token, _ := j.NewWithClaims(map[string]any{"test": "data"})
-				t.Log("fk", token)
+				token, _ := j.NewWithClaims(map[string]any{"user_id": 1})
 				return token
 			}(),
 			wantErr: false,
