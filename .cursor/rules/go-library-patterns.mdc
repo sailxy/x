@@ -1,0 +1,17 @@
+---
+description: Go coding patterns used across this repository
+globs: **/*.go
+alwaysApply: false
+---
+
+# Go Library Patterns
+
+- Prefer straightforward exported APIs with minimal indirection.
+- Reuse the package pattern already common here: `type Config struct { ... }`, `func New(...)`, then receiver methods on the client/value.
+- Return errors instead of panicking or exiting when initialization or I/O can fail.
+- When adding context to an error, use `fmt.Errorf("...: %w", err)`.
+- Accept `context.Context` for operations tied to I/O, request scope, or transactions.
+- Keep implementations compact and readable; avoid premature interfaces and unnecessary generics.
+- Use zero or near-zero dependencies beyond what the package already needs.
+- Add comments sparingly, mainly for behavior, constraints, or non-obvious tradeoffs.
+- Stay consistent with existing package naming, receiver naming, and field visibility choices.

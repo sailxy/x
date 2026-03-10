@@ -1,0 +1,16 @@
+---
+description: Go test conventions for this repository
+globs: **/*_test.go
+alwaysApply: false
+---
+
+# Go Test Style
+
+- Use the standard `testing` package with `github.com/stretchr/testify/assert`.
+- Keep tests in the same package unless external-package tests are clearly needed.
+- Prefer table-driven tests when covering multiple input or error cases.
+- Cover both happy paths and representative failure paths for public behavior.
+- Keep fixtures small and inline when possible so tests stay easy to scan.
+- When test data resembles a secret or token, add `// gitleaks:allow` on the relevant line.
+- Prefer clear assertions over helper-heavy abstractions.
+- Match the repository's naming style: `TestXxx`, with `t.Run(...)` for subcases when it improves readability.
