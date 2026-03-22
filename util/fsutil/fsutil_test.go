@@ -25,6 +25,81 @@ func TestFindModuleRoot(t *testing.T) {
 	assert.NotEmpty(t, roots)
 }
 
+func TestParseMIMEType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		want    string
+		wantErr string
+	}{
+		{
+			name:  "valid image jpeg",
+			input: "image/jpeg",
+			want:  "image/jpeg",
+		},
+		{
+			name:  "valid application json",
+			input: "application/json",
+			want:  "application/json",
+		},
+		{
+			name:  "normalizes uppercase",
+			input: "TEXT/PLAIN",
+			want:  "text/plain",
+		},
+		{
+			name:    "empty string",
+			input:   "",
+			wantErr: "mime type is empty",
+		},
+		{
+			name:    "missing slash",
+			input:   "abc",
+			wantErr: "type/subtype",
+		},
+		{
+			name:    "missing subtype",
+			input:   "image",
+			wantErr: "type/subtype",
+		},
+		{
+			name:    "extra slash",
+			input:   "image//jpeg",
+			wantErr: "mime:",
+		},
+		{
+			name:    "leading and trailing spaces",
+			input:   " image/jpeg ",
+			wantErr: "leading or trailing spaces",
+		},
+		{
+			name:    "invalid characters",
+			input:   "image/jp<eg",
+			wantErr: "mime:",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := ParseMIMEType(tt.input)
+			if tt.wantErr != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tt.wantErr)
+				assert.Empty(t, got)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGenerateUploadKey(t *testing.T) {
 	t.Parallel()
 

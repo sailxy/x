@@ -3,6 +3,8 @@ package fsutil
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
+	"mime"
 	"os"
 	"path"
 	"path/filepath"
@@ -58,6 +60,28 @@ func FindModuleRoot(dir string) string {
 		dir = d
 	}
 	return ""
+}
+
+// ParseMIMEType validates v as a bare MIME type and returns its normalized form.
+func ParseMIMEType(v string) (string, error) {
+	if v == "" {
+		return "", errors.New("mime type is empty")
+	}
+	if strings.TrimSpace(v) != v {
+		return "", errors.New("mime type must not contain leading or trailing spaces")
+	}
+
+	mediaType, _, err := mime.ParseMediaType(v)
+	if err != nil {
+		return "", err
+	}
+
+	typePart, subType, ok := strings.Cut(mediaType, "/")
+	if !ok || typePart == "" || subType == "" || strings.Contains(subType, "/") {
+		return "", errors.New("mime type must be in type/subtype form")
+	}
+
+	return mediaType, nil
 }
 
 func normalizeUploadFilename(filename string) string {
