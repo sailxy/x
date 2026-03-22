@@ -12,7 +12,7 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
-const expiredInSec int64 = 300
+const defaultExpiredInSec int64 = 300
 
 type Config struct {
 	Endpoint        string
@@ -53,13 +53,15 @@ func New(c Config) (*Client, error) {
 }
 
 type signURLResp struct {
-	SignedURL string
+	SignedURL    string
+	ExpiredInSec int64
 }
 
 type SignURLConfig struct {
-	ContentType string
-	Callback    string
-	CallbackVar string
+	ContentType  string
+	ExpiredInSec int64 // expired in seconds, default 300s
+	Callback     string
+	CallbackVar  string
 }
 
 func (c *Client) SignURL(key string, cfg SignURLConfig) (*signURLResp, error) {
@@ -74,13 +76,19 @@ func (c *Client) SignURL(key string, cfg SignURLConfig) (*signURLResp, error) {
 		opts = append(opts, oss.CallbackVar(cfg.CallbackVar))
 	}
 
+	expiredInSec := cfg.ExpiredInSec
+	if expiredInSec == 0 {
+		expiredInSec = defaultExpiredInSec
+	}
+
 	signedURL, err := c.bucket.SignURL(key, oss.HTTPPut, expiredInSec, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &signURLResp{
-		SignedURL: signedURL,
+		SignedURL:    signedURL,
+		ExpiredInSec: expiredInSec,
 	}, nil
 }
 
@@ -101,7 +109,7 @@ type policyToken struct {
 
 func (c *Client) PostInfo(dir string) (*policyToken, error) {
 	now := time.Now().Unix()
-	expireEnd := now + expiredInSec
+	expireEnd := now + defaultExpiredInSec
 	tokenExpire := gmtISO8601(expireEnd)
 
 	// Create post config json.
