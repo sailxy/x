@@ -5,14 +5,22 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"hash"
 	"io"
 	"time"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	aliyunoss "github.com/aliyun/aliyun-oss-go-sdk/oss"
 )
 
 const defaultExpiredInSec int64 = 300
+
+type HTTPMethod = aliyunoss.HTTPMethod
+
+const (
+	HTTPGet HTTPMethod = aliyunoss.HTTPGet
+	HTTPPut HTTPMethod = aliyunoss.HTTPPut
+)
 
 type Config struct {
 	Endpoint        string
@@ -27,11 +35,11 @@ type Client struct {
 	host            string
 	accessKeyID     string
 	accessKeySecret string
-	bucket          *oss.Bucket
+	bucket          *aliyunoss.Bucket
 }
 
 func New(c Config) (*Client, error) {
-	client, err := oss.New(c.Endpoint, c.AccessKeyID, c.AccessKeySecret)
+	client, err := aliyunoss.New(c.Endpoint, c.AccessKeyID, c.AccessKeySecret)
 	if err != nil {
 		return nil, err
 	}
@@ -59,21 +67,22 @@ type signURLResp struct {
 
 type SignURLConfig struct {
 	ContentType  string
+	HTTPMethod   HTTPMethod
 	ExpiredInSec int64 // expired in seconds, default 300s
 	Callback     string
 	CallbackVar  string
 }
 
 func (c *Client) SignURL(key string, cfg SignURLConfig) (*signURLResp, error) {
-	opts := []oss.Option{}
+	opts := []aliyunoss.Option{}
 	if cfg.ContentType != "" {
-		opts = append(opts, oss.ContentType(cfg.ContentType))
+		opts = append(opts, aliyunoss.ContentType(cfg.ContentType))
 	}
 	if cfg.Callback != "" {
-		opts = append(opts, oss.Callback(cfg.Callback))
+		opts = append(opts, aliyunoss.Callback(cfg.Callback))
 	}
 	if cfg.CallbackVar != "" {
-		opts = append(opts, oss.CallbackVar(cfg.CallbackVar))
+		opts = append(opts, aliyunoss.CallbackVar(cfg.CallbackVar))
 	}
 
 	expiredInSec := cfg.ExpiredInSec
@@ -81,7 +90,12 @@ func (c *Client) SignURL(key string, cfg SignURLConfig) (*signURLResp, error) {
 		expiredInSec = defaultExpiredInSec
 	}
 
-	signedURL, err := c.bucket.SignURL(key, oss.HTTPPut, expiredInSec, opts...)
+	method, err := parseHTTPMethod(cfg.HTTPMethod)
+	if err != nil {
+		return nil, err
+	}
+
+	signedURL, err := c.bucket.SignURL(key, method, expiredInSec, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +104,17 @@ func (c *Client) SignURL(key string, cfg SignURLConfig) (*signURLResp, error) {
 		SignedURL:    signedURL,
 		ExpiredInSec: expiredInSec,
 	}, nil
+}
+
+func parseHTTPMethod(method HTTPMethod) (aliyunoss.HTTPMethod, error) {
+	switch method {
+	case "", HTTPPut:
+		return aliyunoss.HTTPPut, nil
+	case HTTPGet:
+		return aliyunoss.HTTPGet, nil
+	default:
+		return "", fmt.Errorf("unsupported HTTPMethod %q, only GET and PUT are supported", method)
+	}
 }
 
 type postConfig struct {

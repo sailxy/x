@@ -34,6 +34,34 @@ func TestSignURL(t *testing.T) {
 	}
 }
 
+func TestParseHTTPMethod(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   HTTPMethod
+		want    HTTPMethod
+		wantErr bool
+	}{
+		{name: "default put", input: "", want: HTTPPut},
+		{name: "put", input: HTTPPut, want: HTTPPut},
+		{name: "get", input: HTTPGet, want: HTTPGet},
+		{name: "invalid", input: HTTPMethod("POST"), wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseHTTPMethod(tt.input)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			if assert.NoError(t, err) {
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
 func TestPostInfo(t *testing.T) {
 	client, err := new()
 	if !assert.NoError(t, err) {
