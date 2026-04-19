@@ -63,7 +63,7 @@ type RabbitMQ struct {
 	ch   *amqp.Channel
 }
 
-func NewRabbitMQ(c Config) (*RabbitMQ, error) {
+func New(c Config) (*RabbitMQ, error) {
 	conn, err := amqp.Dial(c.URL)
 	if err != nil {
 		return nil, err
