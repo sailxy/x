@@ -24,6 +24,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/k0kubun/pp/v3 v3.5.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/rs/xid v1.6.0
 	github.com/spf13/cast v1.7.0

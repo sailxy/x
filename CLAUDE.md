@@ -127,6 +127,14 @@ type DB = gorm.DB
 type Client = redis.Client
 ```
 
+**Implementation Style**: Prefer direct, local logic over extra indirection when the abstraction does not clearly improve reuse or readability:
+
+- Prefer direct field assignment and inline argument passing when a value is only used once
+- Avoid package-level indirection added only to make tests easier
+- Avoid trivial helper methods like `x.params()` when writing the values inline is clearer
+- Keep wrappers thin and obvious; if a helper exists, it should carry real semantic value
+- When boolean flags affect behavior, prefer explicit caller-provided values over implicit defaults or pointer-bool config fields
+
 ### JWT Implementation Notes
 
 The JWT package uses `jwt.WithJSONNumber()` to preserve numeric precision when parsing tokens. This prevents Go's default JSON parser from converting numbers to float64. Use `json.Number` type assertions when extracting numeric values from claims.
