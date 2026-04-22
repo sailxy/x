@@ -1,6 +1,9 @@
 package oss
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"os"
 	"testing"
 
@@ -77,4 +80,16 @@ func TestPostInfo(t *testing.T) {
 		t.Log("policy", resp.Policy)
 		t.Log("signature", resp.Signature)
 	}
+}
+
+func TestSignPostPolicy(t *testing.T) {
+	policy := base64.StdEncoding.EncodeToString([]byte(`{"expiration":"2026-04-23T00:00:00Z"}`))
+	secret := "secret"
+
+	mac := hmac.New(sha1.New, []byte(secret))
+	_, err := mac.Write([]byte(policy))
+	assert.NoError(t, err)
+
+	want := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	assert.Equal(t, want, signPostPolicy(policy, secret))
 }

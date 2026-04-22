@@ -1,16 +1,13 @@
 package oss
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"hash"
-	"io"
 	"time"
 
 	aliyunoss "github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/sailxy/x/util/cryptoutil"
 )
 
 const defaultExpiredInSec int64 = 300
@@ -151,12 +148,7 @@ func (c *Client) PostInfo(dir string) (*policyToken, error) {
 		return nil, err
 	}
 	debyte := base64.StdEncoding.EncodeToString(result)
-	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(c.accessKeySecret))
-	_, err = io.WriteString(h, debyte)
-	if err != nil {
-		return nil, err
-	}
-	signedStr := base64.StdEncoding.EncodeToString(h.Sum(nil))
+	signedStr := signPostPolicy(debyte, c.accessKeySecret)
 
 	var policyToken policyToken
 	policyToken.AccessKeyId = c.accessKeyID
@@ -170,4 +162,8 @@ func (c *Client) PostInfo(dir string) (*policyToken, error) {
 
 func gmtISO8601(expireEnd int64) string {
 	return time.Unix(expireEnd, 0).UTC().Format("2006-01-02T15:04:05Z")
+}
+
+func signPostPolicy(policy, secret string) string {
+	return cryptoutil.HMACSHA1Base64String(policy, secret)
 }
