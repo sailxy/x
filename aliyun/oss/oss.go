@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	aliyunoss "github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -36,7 +37,8 @@ type Client struct {
 }
 
 func New(c Config) (*Client, error) {
-	client, err := aliyunoss.New(c.Endpoint, c.AccessKeyID, c.AccessKeySecret)
+	endpoint := normalizeEndpoint(c.Endpoint)
+	client, err := aliyunoss.New(endpoint, c.AccessKeyID, c.AccessKeySecret)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +48,9 @@ func New(c Config) (*Client, error) {
 		return nil, err
 	}
 
-	host := "https://" + c.BucketName + "." + c.Endpoint
+	host := bucketHost(c.BucketName, endpoint)
 	return &Client{
-		endpoint:        c.Endpoint,
+		endpoint:        endpoint,
 		bucketName:      c.BucketName,
 		host:            host,
 		accessKeyID:     c.AccessKeyID,
@@ -158,6 +160,17 @@ func (c *Client) PostInfo(dir string) (*policyToken, error) {
 	policyToken.Directory = dir
 	policyToken.Policy = debyte
 	return &policyToken, nil
+}
+
+func normalizeEndpoint(endpoint string) string {
+	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		return endpoint
+	}
+	return "https://" + endpoint
+}
+
+func bucketHost(bucketName, endpoint string) string {
+	return strings.TrimRight(strings.Replace(endpoint, "://", "://"+bucketName+".", 1), "/")
 }
 
 func gmtISO8601(expireEnd int64) string {

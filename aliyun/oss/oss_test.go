@@ -12,10 +12,10 @@ import (
 
 func new() (*Client, error) {
 	return New(Config{
-		Endpoint:        os.Getenv("OSS_ENDPOINT"),
-		BucketName:      os.Getenv("OSS_BUCKET"),
-		AccessKeyID:     os.Getenv("OSS_ACCESS_KEY_ID"),
-		AccessKeySecret: os.Getenv("OSS_ACCESS_KEY_SECRET"),
+		Endpoint:        os.Getenv("ALIYUN_OSS_ENDPOINT"),
+		BucketName:      os.Getenv("ALIYUN_OSS_BUCKET"),
+		AccessKeyID:     os.Getenv("ALIYUN_OSS_ACCESS_KEY_ID"),
+		AccessKeySecret: os.Getenv("ALIYUN_OSS_ACCESS_KEY_SECRET"),
 	})
 }
 
@@ -29,8 +29,8 @@ func TestSignURL(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	resp, err := client.SignURL("1.txt", SignURLConfig{
-		ContentType: "text/plain",
+	resp, err := client.SignURL("test.txt", SignURLConfig{
+		HTTPMethod: HTTPGet,
 	})
 	if assert.NoError(t, err) {
 		t.Log(resp.SignedURL)
