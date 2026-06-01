@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -62,6 +63,11 @@ func New(c Config) (*Logger, error) {
 
 func (l *Logger) WithCtx(ctx context.Context) *Logger {
 	traceID := ctx.Value(traceIDKey{})
+	if traceID == nil {
+		if sc := trace.SpanContextFromContext(ctx); sc.HasTraceID() {
+			traceID = sc.TraceID().String()
+		}
+	}
 	return &Logger{
 		instance: l.instance.With("trace_id", traceID),
 	}
