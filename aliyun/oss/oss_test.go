@@ -1,58 +1,65 @@
 package oss
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/base64"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func new() (*Client, error) {
-	return New(Config{
-		Endpoint:        os.Getenv("ALIYUN_OSS_ENDPOINT"),
-		BucketName:      os.Getenv("ALIYUN_OSS_BUCKET"),
-		AccessKeyID:     os.Getenv("ALIYUN_OSS_ACCESS_KEY_ID"),
-		AccessKeySecret: os.Getenv("ALIYUN_OSS_ACCESS_KEY_SECRET"),
-	})
-}
-
 func TestNew(t *testing.T) {
+	requireAliyunOSSEnv(t)
+
 	_, err := new()
 	assert.NoError(t, err)
 }
 
-func TestSignURL(t *testing.T) {
-	client, err := new()
-	if !assert.NoError(t, err) {
-		return
-	}
-	resp, err := client.SignURL("test.txt", SignURLConfig{
-		HTTPMethod: HTTPGet,
-	})
-	if assert.NoError(t, err) {
-		t.Log(resp.SignedURL)
-	}
-}
-
-func TestParseHTTPMethod(t *testing.T) {
+func TestParseObjectKeyFromURL(t *testing.T) {
 	tests := []struct {
 		name    string
-		input   HTTPMethod
-		want    HTTPMethod
+		rawURL  string
+		want    string
 		wantErr bool
 	}{
-		{name: "default put", input: "", want: HTTPPut},
-		{name: "put", input: HTTPPut, want: HTTPPut},
-		{name: "get", input: HTTPGet, want: HTTPGet},
-		{name: "invalid", input: HTTPMethod("POST"), wantErr: true},
+		{
+			name:   "nested path",
+			rawURL: "https://bucket.oss-cn-hangzhou.aliyuncs.com/path/to/file.txt",
+			want:   "path/to/file.txt",
+		},
+		{
+			name:   "ignores query and fragment",
+			rawURL: "https://bucket.oss-cn-hangzhou.aliyuncs.com/path/to/file.txt?Expires=1&OSSAccessKeyId=id#section",
+			want:   "path/to/file.txt",
+		},
+		{
+			name:   "decodes escaped characters",
+			rawURL: "https://bucket.oss-cn-hangzhou.aliyuncs.com/path/%E4%B8%AD%E6%96%87%20file.txt",
+			want:   "path/中文 file.txt",
+		},
+		{
+			name:    "malformed url",
+			rawURL:  "http://%",
+			wantErr: true,
+		},
+		{
+			name:    "relative path is not url",
+			rawURL:  "path/to/file.txt",
+			wantErr: true,
+		},
+		{
+			name:    "empty path",
+			rawURL:  "https://bucket.oss-cn-hangzhou.aliyuncs.com",
+			wantErr: true,
+		},
+		{
+			name:    "root path",
+			rawURL:  "https://bucket.oss-cn-hangzhou.aliyuncs.com/",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseHTTPMethod(tt.input)
+			got, err := parseObjectKeyFromURL(tt.rawURL)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -63,33 +70,4 @@ func TestParseHTTPMethod(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPostInfo(t *testing.T) {
-	client, err := new()
-	if !assert.NoError(t, err) {
-		return
-	}
-	resp, err := client.PostInfo("test")
-	if assert.NoError(t, err) {
-		t.Log("access key id", resp.AccessKeyId)
-		t.Log("callback", resp.Callback)
-		t.Log("directory", resp.Directory)
-		t.Log("expire", resp.Expire)
-		t.Log("host", resp.Host)
-		t.Log("policy", resp.Policy)
-		t.Log("signature", resp.Signature)
-	}
-}
-
-func TestSignPostPolicy(t *testing.T) {
-	policy := base64.StdEncoding.EncodeToString([]byte(`{"expiration":"2026-04-23T00:00:00Z"}`))
-	secret := "secret"
-
-	mac := hmac.New(sha1.New, []byte(secret))
-	_, err := mac.Write([]byte(policy))
-	assert.NoError(t, err)
-
-	want := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	assert.Equal(t, want, signPostPolicy(policy, secret))
 }
