@@ -21,7 +21,6 @@ import (
 func TestNew(t *testing.T) {
 	privateKey := testECPrivateKey(t, elliptic.P256())
 	privateKeyPEM := testPKCS8PEM(t, privateKey)
-	fixedNow := time.Date(2026, time.September, 7, 12, 0, 0, 0, time.UTC)
 	httpClient := &http.Client{Timeout: time.Second}
 
 	client, err := New(Config{
@@ -30,7 +29,6 @@ func TestNew(t *testing.T) {
 		KeyID:         " KEY1234567 ",
 		PrivateKeyPEM: privateKeyPEM,
 		HTTPClient:    httpClient,
-		Now:           func() time.Time { return fixedNow },
 	})
 	require.NoError(t, err)
 	require.NotNil(t, client)
@@ -41,16 +39,7 @@ func TestNew(t *testing.T) {
 	assert.Contains(t, client.clientIDs, "com.example.ios")
 	assert.Equal(t, privateKey.D, client.privateKey.D)
 	assert.NotNil(t, client.rest)
-	assert.Equal(t, fixedNow, client.now())
-
-	defaultClient, err := New(Config{
-		TeamID:        "TEAM123456",
-		ClientIDs:     []string{"com.example.web"},
-		KeyID:         "KEY1234567",
-		PrivateKeyPEM: privateKeyPEM,
-	})
-	require.NoError(t, err)
-	assert.WithinDuration(t, time.Now(), defaultClient.now(), time.Second)
+	assert.WithinDuration(t, time.Now(), client.now(), time.Second)
 }
 
 func TestNewRejectsInvalidConfig(t *testing.T) {

@@ -102,5 +102,6 @@ func testAppleClient(t *testing.T) *Client {
 		PrivateKeyPEM: testPKCS8PEM(t, testECPrivateKey(t, elliptic.P256())),
 	})
 	require.NoError(t, err)
+	client.now = testAppleNow
 	return client
 }

@@ -9,11 +9,7 @@ func (c *Client) Authenticate(ctx context.Context, request AuthenticateRequest) 
 	if err != nil {
 		return nil, err
 	}
-	identity, err := c.VerifyIdentityToken(ctx, VerifyIdentityTokenRequest{
-		ClientID:           request.ClientID,
-		IdentityToken:      exchange.identityToken,
-		ExpectedNonceClaim: request.ExpectedNonceClaim,
-	})
+	identity, err := c.verifyIdentityToken(ctx, request.ClientID, exchange.identityToken, request.ExpectedNonceClaim)
 	if err != nil {
 		return nil, err
 	}

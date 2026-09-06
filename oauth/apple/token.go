@@ -7,14 +7,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/sailxy/x/oauth"
 )
 
 const (
-	tokenEndpoint        = "https://appleid.apple.com/auth/token"
-	clientSecretLifetime = 5 * time.Minute
+	tokenEndpoint = "https://appleid.apple.com/auth/token"
 )
 
 type tokenExchange struct {
@@ -41,7 +39,7 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 	if redirectURI != "" && strings.TrimSpace(redirectURI) == "" {
 		return tokenExchange{}, invalidInput("exchange code", errors.New("redirect URI is invalid"))
 	}
-	secret, err := c.clientSecret(clientID, clientSecretLifetime)
+	secret, err := c.clientSecret(clientID)
 	if err != nil {
 		return tokenExchange{}, err
 	}

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sailxy/x/oauth"
 )
 
 const identityTokenLeeway = time.Minute
@@ -36,24 +37,16 @@ func (b *appleBool) UnmarshalJSON(data []byte) error {
 	return errors.New("Apple boolean claim is invalid")
 }
 
-// VerifyIdentityToken verifies an Apple identity token and returns only
-// trusted claims. ClientID must be selected from the configured allowlist.
-func (c *Client) VerifyIdentityToken(ctx context.Context, request VerifyIdentityTokenRequest) (*Identity, error) {
-	if ctx == nil {
-		return nil, invalidInput("verify identity token", errors.New("context is required"))
-	}
-	clientID, err := c.clientID(request.ClientID, "verify identity token")
-	if err != nil {
-		return nil, err
-	}
-	if strings.TrimSpace(request.IdentityToken.Value()) == "" {
-		return nil, invalidInput("verify identity token", errors.New("identity token is required"))
-	}
-
+func (c *Client) verifyIdentityToken(
+	ctx context.Context,
+	clientID string,
+	identityToken oauth.SensitiveString,
+	expectedNonceClaim string,
+) (*Identity, error) {
 	claims := &identityClaims{}
 	var keyErr error
 	token, err := jwt.ParseWithClaims(
-		request.IdentityToken.Value(),
+		identityToken.Value(),
 		claims,
 		func(token *jwt.Token) (any, error) {
 			keyID, ok := token.Header["kid"].(string)
@@ -84,9 +77,9 @@ func (c *Client) VerifyIdentityToken(ctx context.Context, request VerifyIdentity
 	if strings.TrimSpace(claims.Subject) == "" {
 		return nil, tokenValidation(errors.New("subject is required"))
 	}
-	if request.ExpectedNonceClaim != "" && subtle.ConstantTimeCompare(
+	if expectedNonceClaim != "" && subtle.ConstantTimeCompare(
 		[]byte(claims.Nonce),
-		[]byte(request.ExpectedNonceClaim),
+		[]byte(expectedNonceClaim),
 	) != 1 {
 		return nil, tokenValidation(errors.New("nonce does not match"))
 	}

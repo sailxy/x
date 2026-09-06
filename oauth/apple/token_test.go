@@ -203,11 +203,9 @@ func newAppleClientWithTransport(t *testing.T, transport http.RoundTripper) *Cli
 		KeyID:         "KEY1234567",
 		PrivateKeyPEM: testPKCS8PEM(t, fixedTestPrivateKey()),
 		HTTPClient:    &http.Client{Transport: transport},
-		Now: func() time.Time {
-			return time.Date(2026, time.September, 7, 12, 0, 0, 0, time.UTC)
-		},
 	})
 	require.NoError(t, err)
+	client.now = testAppleNow
 	return client
 }
 

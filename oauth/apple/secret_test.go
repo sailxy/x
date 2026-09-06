@@ -3,14 +3,12 @@ package apple
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"errors"
 	"fmt"
 	"math/big"
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/sailxy/x/oauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,11 +21,11 @@ func TestClientSecret(t *testing.T) {
 		ClientIDs:     []string{"com.example.web"},
 		KeyID:         "KEY1234567",
 		PrivateKeyPEM: testPKCS8PEM(t, privateKey),
-		Now:           func() time.Time { return now },
 	})
 	require.NoError(t, err)
+	client.now = func() time.Time { return now }
 
-	secret, err := client.clientSecret("com.example.web", 24*time.Hour)
+	secret, err := client.clientSecret("com.example.web")
 	require.NoError(t, err)
 	assert.NotEmpty(t, secret.Value())
 	assert.NotContains(t, fmt.Sprintf("%v", secret), secret.Value())
@@ -49,43 +47,7 @@ func TestClientSecret(t *testing.T) {
 	assert.Equal(t, "com.example.web", claims.Subject)
 	assert.Equal(t, jwt.ClaimStrings{appleIssuer}, claims.Audience)
 	assert.True(t, claims.IssuedAt.Time.Equal(now))
-	assert.True(t, claims.ExpiresAt.Time.Equal(now.Add(24*time.Hour)))
-}
-
-func TestClientSecretLifetimeBoundary(t *testing.T) {
-	client := testAppleClient(t)
-
-	secret, err := client.clientSecret("com.example.web", maxClientSecretLifetime)
-	require.NoError(t, err)
-	assert.NotEmpty(t, secret.Value())
-}
-
-func TestClientSecretRejectsInvalidInput(t *testing.T) {
-	client := testAppleClient(t)
-	tests := []struct {
-		name     string
-		clientID string
-		lifetime time.Duration
-	}{
-		{name: "missing client ID", clientID: "", lifetime: time.Hour},
-		{name: "unknown client ID", clientID: "com.example.unknown", lifetime: time.Hour},
-		{name: "zero lifetime", clientID: "com.example.web", lifetime: 0},
-		{name: "negative lifetime", clientID: "com.example.web", lifetime: -time.Second},
-		{name: "over six months", clientID: "com.example.web", lifetime: maxClientSecretLifetime + time.Nanosecond},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			secret, err := client.clientSecret(test.clientID, test.lifetime)
-			assert.Empty(t, secret.Value())
-			assert.ErrorIs(t, err, oauth.ErrInvalidInput)
-
-			var oauthError *oauth.Error
-			require.True(t, errors.As(err, &oauthError))
-			assert.Equal(t, oauth.ProviderApple, oauthError.Provider)
-			assert.Equal(t, "generate client secret", oauthError.Operation)
-		})
-	}
+	assert.True(t, claims.ExpiresAt.Time.Equal(now.Add(clientSecretLifetime)))
 }
 
 // fixedTestPrivateKey is deterministic test data, not a production credential.

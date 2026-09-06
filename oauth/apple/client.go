@@ -27,7 +27,6 @@ type Config struct {
 	KeyID         string
 	PrivateKeyPEM oauth.SensitiveString
 	HTTPClient    *http.Client
-	Now           func() time.Time
 }
 
 // Format omits credentials and HTTP client internals from formatted output.
@@ -69,17 +68,13 @@ func New(config Config) (*Client, error) {
 	if config.HTTPClient != nil {
 		httpClient = rest.NewRESTWithClient(config.HTTPClient)
 	}
-	now := config.Now
-	if now == nil {
-		now = time.Now
-	}
 	return &Client{
 		teamID:     teamID,
 		clientIDs:  clientIDs,
 		keyID:      keyID,
 		privateKey: privateKey,
 		rest:       httpClient,
-		now:        now,
+		now:        time.Now,
 		keys:       &jwksCache{},
 	}, nil
 }

@@ -26,11 +26,7 @@ func TestVerifyIdentityToken(t *testing.T) {
 	claims["aud"] = []string{"another-client", "com.example.web"}
 	token := signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key)
 
-	identity, err := client.VerifyIdentityToken(context.Background(), VerifyIdentityTokenRequest{
-		ClientID:           "com.example.web",
-		IdentityToken:      token,
-		ExpectedNonceClaim: "expected-nonce",
-	})
+	identity, err := client.verifyIdentityToken(context.Background(), "com.example.web", token, "expected-nonce")
 	require.NoError(t, err)
 	require.NotNil(t, identity)
 	assert.Equal(t, "apple-subject", identity.Subject)
@@ -105,10 +101,7 @@ func TestVerifyIdentityTokenRejectsInvalidToken(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			client := newLocalAppleClient(t, testJWKSHandler(t, trustedKey, "apple-key"))
-			identity, err := client.VerifyIdentityToken(context.Background(), VerifyIdentityTokenRequest{
-				ClientID:      "com.example.web",
-				IdentityToken: test.token(t),
-			})
+			identity, err := client.verifyIdentityToken(context.Background(), "com.example.web", test.token(t), "")
 			assert.Nil(t, identity)
 			assert.ErrorIs(t, err, oauth.ErrTokenValidation)
 		})
@@ -122,10 +115,12 @@ func TestVerifyIdentityTokenNonce(t *testing.T) {
 	t.Run("disabled", func(t *testing.T) {
 		claims := validIdentityClaims()
 		delete(claims, "nonce")
-		identity, err := client.VerifyIdentityToken(context.Background(), VerifyIdentityTokenRequest{
-			ClientID:      "com.example.web",
-			IdentityToken: signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
-		})
+		identity, err := client.verifyIdentityToken(
+			context.Background(),
+			"com.example.web",
+			signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
+			"",
+		)
 		require.NoError(t, err)
 		assert.Empty(t, identity.Nonce)
 	})
@@ -144,11 +139,12 @@ func TestVerifyIdentityTokenNonce(t *testing.T) {
 			} else {
 				claims["nonce"] = test.nonce
 			}
-			identity, err := client.VerifyIdentityToken(context.Background(), VerifyIdentityTokenRequest{
-				ClientID:           "com.example.web",
-				IdentityToken:      signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
-				ExpectedNonceClaim: "expected-nonce",
-			})
+			identity, err := client.verifyIdentityToken(
+				context.Background(),
+				"com.example.web",
+				signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
+				"expected-nonce",
+			)
 			assert.Nil(t, identity)
 			assert.ErrorIs(t, err, oauth.ErrTokenValidation)
 		})
@@ -173,10 +169,12 @@ func TestVerifyIdentityTokenAppleBooleanClaims(t *testing.T) {
 			claims := validIdentityClaims()
 			claims["email_verified"] = test.emailVerified
 			claims["is_private_email"] = test.privateEmail
-			identity, err := client.VerifyIdentityToken(context.Background(), VerifyIdentityTokenRequest{
-				ClientID:      "com.example.web",
-				IdentityToken: signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
-			})
+			identity, err := client.verifyIdentityToken(
+				context.Background(),
+				"com.example.web",
+				signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
+				"",
+			)
 			require.NoError(t, err)
 			assert.Equal(t, test.expectedVerified, identity.EmailVerified)
 			assert.Equal(t, test.expectedPrivate, identity.IsPrivateEmail)
@@ -186,32 +184,15 @@ func TestVerifyIdentityTokenAppleBooleanClaims(t *testing.T) {
 	for _, invalid := range []any{1, "TRUE", nil, map[string]any{"value": true}} {
 		claims := validIdentityClaims()
 		claims["email_verified"] = invalid
-		identity, err := client.VerifyIdentityToken(context.Background(), VerifyIdentityTokenRequest{
-			ClientID:      "com.example.web",
-			IdentityToken: signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
-		})
+		identity, err := client.verifyIdentityToken(
+			context.Background(),
+			"com.example.web",
+			signTestIdentityToken(t, claims, "apple-key", jwt.SigningMethodRS256, key),
+			"",
+		)
 		assert.Nil(t, identity)
 		assert.ErrorIs(t, err, oauth.ErrTokenValidation)
 	}
-}
-
-func TestVerifyIdentityTokenRejectsInvalidInput(t *testing.T) {
-	client := testAppleClient(t)
-	for _, request := range []VerifyIdentityTokenRequest{
-		{ClientID: "com.example.web"},
-		{ClientID: "com.example.web", IdentityToken: "  "},
-		{ClientID: "com.example.unknown", IdentityToken: "token"},
-	} {
-		identity, err := client.VerifyIdentityToken(context.Background(), request)
-		assert.Nil(t, identity)
-		assert.ErrorIs(t, err, oauth.ErrInvalidInput)
-	}
-	identity, err := client.VerifyIdentityToken(nil, VerifyIdentityTokenRequest{
-		ClientID:      "com.example.web",
-		IdentityToken: "token",
-	})
-	assert.Nil(t, identity)
-	assert.ErrorIs(t, err, oauth.ErrInvalidInput)
 }
 
 func validIdentityClaims() jwt.MapClaims {
