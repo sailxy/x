@@ -1,0 +1,2 @@
+# Invalid JWT fixture from jwt/jwt_test.go in historical commit 4c9c557.
+4c9c5574d2506c81dbd7f58c59711cac38d3c329:jwt/jwt_test.go:jwt:53

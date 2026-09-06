@@ -63,7 +63,7 @@ func TestNewRESTWithClient(t *testing.T) {
 		r := NewRESTWithClient(supplied)
 		defer func() { _ = r.Close() }()
 		assert.Same(t, supplied, r.client.Client())
-		assert.Zero(t, r.doTimeout)
+		assert.Equal(t, DefaultTimeout, r.doTimeout)
 	})
 }
 

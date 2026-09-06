@@ -61,13 +61,15 @@ func NewREST() *REST {
 }
 
 // NewRESTWithClient creates a REST client backed by client. When client is nil,
-// it is equivalent to NewREST. A supplied client retains its own timeout policy.
+// it is equivalent to NewREST. Do always applies DefaultTimeout; a shorter
+// timeout configured on client still takes precedence.
 func NewRESTWithClient(client *http.Client) *REST {
 	if client == nil {
 		return NewREST()
 	}
 	return &REST{
-		client: resty.NewWithClient(client),
+		client:    resty.NewWithClient(client),
+		doTimeout: DefaultTimeout,
 	}
 }
 
