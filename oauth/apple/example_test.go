@@ -61,4 +61,12 @@ func ExampleClient_Authenticate() {
 	// application user and issuing an application session remain backend work.
 	identityKey := [2]string{result.Identity.Audience, result.Identity.Subject}
 	_ = identityKey
+
+	// Token fields are returned as redacted values so the backend can decide
+	// whether it needs them. Do not log them; persist only when the business
+	// explicitly supports refresh or revocation.
+	accessToken := result.Token.AccessToken.Value()
+	refreshToken := result.Token.RefreshToken.Value()
+	identityToken := result.Token.IdentityToken.Value()
+	_, _, _ = accessToken, refreshToken, identityToken
 }

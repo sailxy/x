@@ -3,6 +3,7 @@ package apple
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -23,9 +24,11 @@ func TestAuthenticate(t *testing.T) {
 			assert.Equal(t, "authorization-code", r.Form.Get("code"))
 			assert.Equal(t, "https://example.com/apple/callback", r.Form.Get("redirect_uri"))
 			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
-				"id_token":   identityToken.Value(),
-				"token_type": "Bearer",
-				"expires_in": 3600,
+				"access_token":  "apple-access-token",
+				"refresh_token": "apple-refresh-token",
+				"id_token":      identityToken.Value(),
+				"token_type":    "Bearer",
+				"expires_in":    3600,
 			}))
 		case "/auth/keys":
 			writeTestJWKS(t, w, identityKey, "apple-key")
@@ -48,8 +51,19 @@ func TestAuthenticate(t *testing.T) {
 	assert.True(t, result.Identity.EmailVerified)
 	assert.True(t, result.Identity.IsPrivateEmail)
 	assert.Equal(t, "expected-nonce", result.Identity.Nonce)
-	assert.Equal(t, "Bearer", result.TokenType)
-	assert.Equal(t, int64(3600), result.ExpiresIn)
+	assert.Equal(t, "apple-access-token", result.Token.AccessToken.Value())
+	assert.Equal(t, "apple-refresh-token", result.Token.RefreshToken.Value())
+	assert.Equal(t, identityToken.Value(), result.Token.IdentityToken.Value())
+	assert.Equal(t, "Bearer", result.Token.TokenType)
+	assert.Equal(t, int64(3600), result.Token.ExpiresIn)
+
+	formatted := fmt.Sprintf("%+v", result)
+	encoded, err := json.Marshal(result)
+	require.NoError(t, err)
+	for _, secret := range []string{"apple-access-token", "apple-refresh-token", identityToken.Value()} {
+		assert.NotContains(t, formatted, secret)
+		assert.NotContains(t, string(encoded), secret)
+	}
 }
 
 func TestAuthenticateBindsExchangeAndVerificationClientID(t *testing.T) {

@@ -1,5 +1,7 @@
 package apple
 
+import "github.com/sailxy/x/oauth"
+
 // AuthorizationRequest contains the caller-specific values used to create an
 // Apple Web authorization URL. ClientID must be one of the configured IDs.
 type AuthorizationRequest struct {
@@ -20,12 +22,21 @@ type AuthenticateRequest struct {
 	ExpectedNonceClaim string
 }
 
-// AuthenticateResult contains a verified Apple identity and non-sensitive
-// metadata from the token exchange.
+// AuthenticateResult contains the complete token exchange data and the
+// verified Apple identity. The caller decides how to use or persist it.
 type AuthenticateResult struct {
-	Identity  Identity
-	TokenType string
-	ExpiresIn int64
+	Token    Token
+	Identity Identity
+}
+
+// Token contains the result of an Apple authorization-code exchange.
+// Sensitive fields are redacted during ordinary formatting and JSON encoding.
+type Token struct {
+	AccessToken   oauth.SensitiveString `json:"access_token"`
+	RefreshToken  oauth.SensitiveString `json:"refresh_token"`
+	IdentityToken oauth.SensitiveString `json:"id_token"`
+	TokenType     string                `json:"token_type"`
+	ExpiresIn     int64                 `json:"expires_in"`
 }
 
 // Identity contains claims from a verified Apple identity token.

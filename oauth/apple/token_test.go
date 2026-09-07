@@ -44,9 +44,11 @@ func TestExchange(t *testing.T) {
 
 		result, err := client.exchange(context.Background(), "com.example.web", "authorization-code", redirectURI)
 		require.NoError(t, err)
-		assert.Equal(t, "apple-identity-token", result.identityToken.Value())
-		assert.Equal(t, "Bearer", result.tokenType)
-		assert.Equal(t, int64(3600), result.expiresIn)
+		assert.Equal(t, "apple-access-token", result.AccessToken.Value())
+		assert.Equal(t, "apple-refresh-token", result.RefreshToken.Value())
+		assert.Equal(t, "apple-identity-token", result.IdentityToken.Value())
+		assert.Equal(t, "Bearer", result.TokenType)
+		assert.Equal(t, int64(3600), result.ExpiresIn)
 	})
 
 	t.Run("redirect URI omitted", func(t *testing.T) {
@@ -58,7 +60,7 @@ func TestExchange(t *testing.T) {
 
 		result, err := client.exchange(context.Background(), "com.example.ios", "authorization-code", "")
 		require.NoError(t, err)
-		assert.Equal(t, "apple-identity-token", result.identityToken.Value())
+		assert.Equal(t, "apple-identity-token", result.IdentityToken.Value())
 	})
 }
 

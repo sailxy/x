@@ -15,33 +15,25 @@ const (
 	tokenEndpoint = "https://appleid.apple.com/auth/token"
 )
 
-type tokenExchange struct {
-	identityToken oauth.SensitiveString
-	tokenType     string
-	expiresIn     int64
-}
-
 type tokenResponse struct {
-	TokenType     string                `json:"token_type"`
-	ExpiresIn     int64                 `json:"expires_in"`
-	IdentityToken oauth.SensitiveString `json:"id_token"`
-	Error         string                `json:"error"`
+	Token
+	Error string `json:"error"`
 }
 
-func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI string) (tokenExchange, error) {
+func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI string) (Token, error) {
 	clientID, err := c.clientID(clientID, "exchange code")
 	if err != nil {
-		return tokenExchange{}, err
+		return Token{}, err
 	}
 	if strings.TrimSpace(code) == "" {
-		return tokenExchange{}, invalidInput("exchange code", errors.New("authorization code is required"))
+		return Token{}, invalidInput("exchange code", errors.New("authorization code is required"))
 	}
 	if redirectURI != "" && strings.TrimSpace(redirectURI) == "" {
-		return tokenExchange{}, invalidInput("exchange code", errors.New("redirect URI is invalid"))
+		return Token{}, invalidInput("exchange code", errors.New("redirect URI is invalid"))
 	}
 	secret, err := c.clientSecret(clientID)
 	if err != nil {
-		return tokenExchange{}, err
+		return Token{}, err
 	}
 
 	form := url.Values{
@@ -55,7 +47,7 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 	}
 	req, err := http.NewRequest(http.MethodPost, tokenEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		return tokenExchange{}, oauth.NewError(
+		return Token{}, oauth.NewError(
 			oauth.ProviderApple,
 			oauth.ErrorKindInvalidConfig,
 			"exchange code",
@@ -67,15 +59,15 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 
 	response, requestErr := c.do(ctx, "exchange code", req)
 	if requestErr != nil && response == nil {
-		return tokenExchange{}, requestErr
+		return Token{}, requestErr
 	}
 
 	var payload tokenResponse
 	if err := json.Unmarshal(response.Body, &payload); err != nil {
 		if requestErr != nil {
-			return tokenExchange{}, requestErr
+			return Token{}, requestErr
 		}
-		return tokenExchange{}, oauth.NewError(
+		return Token{}, oauth.NewError(
 			oauth.ProviderApple,
 			oauth.ErrorKindDecode,
 			"exchange code",
@@ -91,22 +83,18 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 		)
 		platformErr.StatusCode = response.StatusCode
 		platformErr.Code = payload.Error
-		return tokenExchange{}, platformErr
+		return Token{}, platformErr
 	}
 	if requestErr != nil {
-		return tokenExchange{}, requestErr
+		return Token{}, requestErr
 	}
 	if strings.TrimSpace(payload.IdentityToken.Value()) == "" {
-		return tokenExchange{}, oauth.NewError(
+		return Token{}, oauth.NewError(
 			oauth.ProviderApple,
 			oauth.ErrorKindInvalidResponse,
 			"exchange code",
 			errors.New("identity token is missing"),
 		)
 	}
-	return tokenExchange{
-		identityToken: payload.IdentityToken,
-		tokenType:     payload.TokenType,
-		expiresIn:     payload.ExpiresIn,
-	}, nil
+	return payload.Token, nil
 }
