@@ -48,5 +48,5 @@ func (c *Client) ReceiveMessage(ctx context.Context, input *ReceiveMessageInput)
 }
 
 func (c *Client) DeleteMessage(ctx context.Context, input *DeleteMessageInput) (*DeleteMessageOutput, error) {
-	return c.client.DeleteMessage(context.Background(), input)
+	return c.client.DeleteMessage(ctx, input)
 }
