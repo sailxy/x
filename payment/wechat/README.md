@@ -1,6 +1,8 @@
-# WeChat Pay
+# 微信支付
 
-`wechat/pay` wraps WeChat Pay API v3 ordinary merchant mode with business-oriented request and response types.
+`payment/wechat` 封装微信支付 API v3 普通商户的一次性收款 API，并提供业务请求和响应类型。
+
+迁移：将 `github.com/sailxy/x/wechat/pay` 改为 `github.com/sailxy/x/payment/wechat`。本包不提供跨平台统一支付接口。
 
 ```go
 wxpay, err := pay.New(pay.Config{

@@ -37,6 +37,7 @@ func (p *Pay) GetRecentOrder(receipt string) (*InApp, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

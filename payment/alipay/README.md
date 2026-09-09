@@ -1,6 +1,8 @@
-# Alipay Pay
+# 支付宝支付
 
-`alipay/pay` wraps Alipay ordinary merchant payment APIs with business-oriented request and response types.
+`payment/alipay` 封装支付宝普通商户的一次性收款 API，并提供业务请求和响应类型。
+
+迁移：将 `github.com/sailxy/x/alipay/pay` 改为 `github.com/sailxy/x/payment/alipay`。本包不提供跨平台统一支付接口。
 
 ```go
 alipayPay, err := pay.New(pay.Config{

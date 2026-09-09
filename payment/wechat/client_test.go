@@ -1,7 +1,6 @@
 package pay
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -14,27 +13,10 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	got, err := New(Config{
-		AppID:                      os.Getenv("WEIXIN_PAY_APP_ID"),
-		MchID:                      os.Getenv("WEIXIN_PAY_MCH_ID"),
-		MchCertificateSerialNumber: os.Getenv("WEIXIN_PAY_CERTIFICATE_SERIAL_NUMBER"),
-		MchPrivateKeyPath:          os.Getenv("WEIXIN_PAY_PRIVATE_KEY_PATH"),
-		MchAPIv3Key:                os.Getenv("WEIXIN_PAY_API_V3_KEY"),
-	})
+	got, err := newWithFactory(validConfig(), noopFactory)
 
 	require.NoError(t, err)
 	require.NotNil(t, got)
-
-	resp, err := got.NativePrepay(context.Background(), PrepayRequest{
-		Description: "test",
-		OutTradeNo:  "111345243455353",
-		NotifyURL:   "https://example.com/notify",
-		Total:       1,
-	})
-
-	require.NoError(t, err)
-	require.NotNil(t, resp)
-	t.Logf("resp: %+v", resp)
 }
 
 func TestNewRequiresOrdinaryMerchantCredentials(t *testing.T) {

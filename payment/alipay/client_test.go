@@ -15,13 +15,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	got, err := New(Config{
-		AppID:              os.Getenv("ALIPAY_APP_ID"),
-		PrivateKeyPEM:      os.Getenv("ALIPAY_PRIVATE_KEY_PEM"),
-		AlipayPublicKeyPEM: os.Getenv("ALIPAY_PUBLIC_KEY_PEM"),
-		NotifyURL:          os.Getenv("ALIPAY_NOTIFY_URL"),
-		ReturnURL:          os.Getenv("ALIPAY_RETURN_URL"),
-	})
+	got, err := New(validConfig())
 
 	require.NoError(t, err)
 	require.NotNil(t, got)
