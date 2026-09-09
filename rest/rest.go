@@ -77,8 +77,22 @@ func (r *REST) Close() error {
 	return r.client.Close()
 }
 
-func (r *REST) Get(url string) (*resty.Response, error) {
-	return r.client.R().Get(url)
+// Get sends a GET request.
+func (r *REST) Get(ctx context.Context, address string) (*Response, error) {
+	return r.request(ctx, http.MethodGet, address, nil)
+}
+
+// Post sends a POST request with body.
+func (r *REST) Post(ctx context.Context, address string, body io.Reader) (*Response, error) {
+	return r.request(ctx, http.MethodPost, address, body)
+}
+
+func (r *REST) request(ctx context.Context, method, address string, body io.Reader) (*Response, error) {
+	req, err := http.NewRequest(method, address, body)
+	if err != nil {
+		return nil, fmt.Errorf("create REST request: %w", err)
+	}
+	return r.Do(ctx, req)
 }
 
 // Do executes req with ctx, reads at most MaxResponseBodyBytes, and rejects

@@ -28,10 +28,10 @@ func TestRESTGet_Success(t *testing.T) {
 	r := NewREST()
 	defer func() { _ = r.Close() }()
 
-	resp, err := r.Get(ts.URL)
+	resp, err := r.Get(context.Background(), ts.URL)
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode())
-	assert.Equal(t, "ok", resp.String())
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "ok", string(resp.Body))
 }
 
 func TestRESTGet_NotFound(t *testing.T) {
@@ -44,10 +44,11 @@ func TestRESTGet_NotFound(t *testing.T) {
 	r := NewREST()
 	defer func() { _ = r.Close() }()
 
-	resp, err := r.Get(ts.URL)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode())
-	assert.Equal(t, "not found", resp.String())
+	resp, err := r.Get(context.Background(), ts.URL)
+	var statusErr *StatusError
+	require.ErrorAs(t, err, &statusErr)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, "not found", string(resp.Body))
 }
 
 func TestNewRESTWithClient(t *testing.T) {

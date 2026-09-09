@@ -7,12 +7,16 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sailxy/x/oauth"
 )
 
 const (
-	tokenEndpoint = "https://appleid.apple.com/auth/token"
+	appleIssuer          = "https://appleid.apple.com"
+	tokenEndpoint        = "https://appleid.apple.com/auth/token"
+	clientSecretLifetime = 5 * time.Minute
 )
 
 type tokenResponse struct {
@@ -47,12 +51,7 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 	}
 	req, err := http.NewRequest(http.MethodPost, tokenEndpoint, strings.NewReader(form.Encode()))
 	if err != nil {
-		return Token{}, oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindInvalidConfig,
-			"exchange code",
-			err,
-		)
+		return Token{}, newError(oauth.ErrorKindInvalidConfig, "exchange code", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -67,20 +66,10 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 		if requestErr != nil {
 			return Token{}, requestErr
 		}
-		return Token{}, oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindDecode,
-			"exchange code",
-			err,
-		)
+		return Token{}, newError(oauth.ErrorKindDecode, "exchange code", err)
 	}
 	if payload.Error != "" {
-		platformErr := oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindPlatform,
-			"exchange code",
-			requestErr,
-		)
+		platformErr := newError(oauth.ErrorKindPlatform, "exchange code", requestErr)
 		platformErr.StatusCode = response.StatusCode
 		platformErr.Code = payload.Error
 		return Token{}, platformErr
@@ -89,12 +78,24 @@ func (c *Client) exchange(ctx context.Context, clientID, code, redirectURI strin
 		return Token{}, requestErr
 	}
 	if strings.TrimSpace(payload.IdentityToken.Value()) == "" {
-		return Token{}, oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindInvalidResponse,
-			"exchange code",
-			errors.New("identity token is missing"),
-		)
+		return Token{}, newError(oauth.ErrorKindInvalidResponse, "exchange code", errors.New("identity token is missing"))
 	}
 	return payload.Token, nil
+}
+
+func (c *Client) clientSecret(clientID string) (oauth.SensitiveString, error) {
+	now := c.now().UTC()
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.RegisteredClaims{
+		Issuer:    c.teamID,
+		Subject:   clientID,
+		Audience:  jwt.ClaimStrings{appleIssuer},
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(clientSecretLifetime)),
+	})
+	token.Header["kid"] = c.keyID
+	signed, err := token.SignedString(c.privateKey)
+	if err != nil {
+		return "", newError(oauth.ErrorKindInvalidConfig, "generate client secret", err)
+	}
+	return oauth.SensitiveString(signed), nil
 }

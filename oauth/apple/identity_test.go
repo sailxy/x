@@ -231,14 +231,14 @@ func testJWKSHandler(t *testing.T, key *rsa.PrivateKey, keyID string) http.Handl
 
 func writeTestJWKS(t *testing.T, w io.Writer, key *rsa.PrivateKey, keyID string) {
 	t.Helper()
-	payload, err := json.Marshal(jwkSet{Keys: []jwk{testJWK(key, keyID)}})
+	payload, err := json.Marshal(testJWKSet{Keys: []testJSONJWK{testJWK(key, keyID)}})
 	require.NoError(t, err)
 	_, err = w.Write(payload)
 	require.NoError(t, err)
 }
 
-func testJWK(key *rsa.PrivateKey, keyID string) jwk {
-	return jwk{
+func testJWK(key *rsa.PrivateKey, keyID string) testJSONJWK {
+	return testJSONJWK{
 		KeyType:   "RSA",
 		KeyID:     keyID,
 		Use:       "sig",
@@ -246,6 +246,19 @@ func testJWK(key *rsa.PrivateKey, keyID string) jwk {
 		Modulus:   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
 		Exponent:  base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
 	}
+}
+
+type testJWKSet struct {
+	Keys []testJSONJWK `json:"keys"`
+}
+
+type testJSONJWK struct {
+	KeyType   string `json:"kty"`
+	KeyID     string `json:"kid"`
+	Use       string `json:"use"`
+	Algorithm string `json:"alg"`
+	Modulus   string `json:"n"`
+	Exponent  string `json:"e"`
 }
 
 func testAppleNow() time.Time {

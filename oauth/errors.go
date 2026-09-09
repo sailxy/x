@@ -13,6 +13,8 @@ type Provider string
 const (
 	ProviderGitHub Provider = "github"
 	ProviderApple  Provider = "apple"
+	ProviderQQ     Provider = "qq"
+	ProviderWechat Provider = "wechat"
 )
 
 // ErrorKind identifies a stable OAuth client failure category.

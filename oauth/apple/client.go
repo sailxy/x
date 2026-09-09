@@ -13,12 +13,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/sailxy/x/oauth"
 	"github.com/sailxy/x/rest"
 )
+
+const authorizationEndpoint = "https://appleid.apple.com/auth/authorize"
 
 // Config configures a Sign in with Apple client.
 type Config struct {
@@ -64,16 +67,16 @@ func New(config Config) (*Client, error) {
 		return nil, err
 	}
 
-	httpClient := rest.NewREST()
+	restClient := rest.NewREST()
 	if config.HTTPClient != nil {
-		httpClient = rest.NewRESTWithClient(config.HTTPClient)
+		restClient = rest.NewRESTWithClient(config.HTTPClient)
 	}
 	return &Client{
 		teamID:     teamID,
 		clientIDs:  clientIDs,
 		keyID:      keyID,
 		privateKey: privateKey,
-		rest:       httpClient,
+		rest:       restClient,
 		now:        time.Now,
 		keys:       &jwksCache{},
 	}, nil
@@ -82,6 +85,90 @@ func New(config Config) (*Client, error) {
 // Format omits credentials and HTTP client internals from formatted output.
 func (c Client) Format(state fmt.State, _ rune) {
 	_, _ = fmt.Fprintf(state, "Sign in with Apple client for team %q", c.teamID)
+}
+
+// AuthorizationURL creates an Apple Web authorization URL. Apple returns the
+// response with form_post, which is required when requesting name or email.
+func (c *Client) AuthorizationURL(request AuthorizationRequest) (string, error) {
+	clientID, err := c.clientID(request.ClientID, "create authorization URL")
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(request.RedirectURI) == "" {
+		return "", invalidInput("create authorization URL", errors.New("redirect URI is required"))
+	}
+	if strings.TrimSpace(request.State) == "" {
+		return "", invalidInput("create authorization URL", errors.New("state is required"))
+	}
+
+	scopes, err := authorizationScopes(request.Scopes)
+	if err != nil {
+		return "", err
+	}
+	query := url.Values{
+		"client_id":     {clientID},
+		"redirect_uri":  {request.RedirectURI},
+		"response_type": {"code"},
+		"response_mode": {"form_post"},
+		"state":         {request.State},
+	}
+	if request.Nonce != "" {
+		query.Set("nonce", request.Nonce)
+	}
+	if len(scopes) != 0 {
+		query.Set("scope", strings.Join(scopes, " "))
+	}
+	return authorizationEndpoint + "?" + query.Encode(), nil
+}
+
+// Authenticate exchanges an authorization code and verifies the identity
+// token returned by Apple using the same configured Client ID.
+func (c *Client) Authenticate(ctx context.Context, request AuthenticateRequest) (*AuthenticateResult, error) {
+	token, err := c.exchange(ctx, request.ClientID, request.Code, request.RedirectURI)
+	if err != nil {
+		return nil, err
+	}
+	identity, err := c.verifyIdentityToken(ctx, request.ClientID, token.IdentityToken, request.ExpectedNonceClaim)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthenticateResult{Token: token, Identity: *identity}, nil
+}
+
+func authorizationScopes(values []string) ([]string, error) {
+	scopes := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		scope := strings.TrimSpace(value)
+		if scope != "name" && scope != "email" {
+			return nil, invalidInput("create authorization URL", errors.New("unsupported scope"))
+		}
+		if _, ok := seen[scope]; ok {
+			continue
+		}
+		seen[scope] = struct{}{}
+		scopes = append(scopes, scope)
+	}
+	return scopes, nil
+}
+
+func (c *Client) clientID(value, operation string) (string, error) {
+	clientID := strings.TrimSpace(value)
+	if clientID == "" {
+		return "", invalidInput(operation, errors.New("client ID is required"))
+	}
+	if _, ok := c.clientIDs[clientID]; !ok {
+		return "", invalidInput(operation, errors.New("client ID is not configured"))
+	}
+	return clientID, nil
+}
+
+func invalidInput(operation string, cause error) error {
+	return newError(oauth.ErrorKindInvalidInput, operation, cause)
+}
+
+func newError(kind oauth.ErrorKind, operation string, cause error) *oauth.Error {
+	return oauth.NewError(oauth.ProviderApple, kind, operation, cause)
 }
 
 func (c *Client) do(ctx context.Context, operation string, req *http.Request) (*rest.Response, error) {
@@ -94,42 +181,22 @@ func (c *Client) do(ctx context.Context, operation string, req *http.Request) (*
 		return response, nil
 	}
 	if errors.Is(err, rest.ErrResponseTooLarge) {
-		return nil, oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindInvalidResponse,
-			operation,
-			err,
-		)
+		return nil, newError(oauth.ErrorKindInvalidResponse, operation, err)
 	}
 
 	var statusErr *rest.StatusError
 	if errors.As(err, &statusErr) {
-		platformErr := oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindPlatform,
-			operation,
-			err,
-		)
+		platformErr := newError(oauth.ErrorKindPlatform, operation, err)
 		platformErr.StatusCode = statusErr.StatusCode
 		return response, platformErr
 	}
-	return nil, oauth.NewError(
-		oauth.ProviderApple,
-		oauth.ErrorKindTransport,
-		operation,
-		err,
-	)
+	return nil, newError(oauth.ErrorKindTransport, operation, err)
 }
 
 func requiredIdentifier(value, name string) (string, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return "", oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindInvalidConfig,
-			"create client",
-			fmt.Errorf("%s is required", name),
-		)
+		return "", newError(oauth.ErrorKindInvalidConfig, "create client", fmt.Errorf("%s is required", name))
 	}
 	return value, nil
 }
@@ -144,12 +211,7 @@ func clientIDSet(values []string) (map[string]struct{}, error) {
 		clientIDs[clientID] = struct{}{}
 	}
 	if len(clientIDs) == 0 {
-		return nil, oauth.NewError(
-			oauth.ProviderApple,
-			oauth.ErrorKindInvalidConfig,
-			"create client",
-			errors.New("at least one client ID is required"),
-		)
+		return nil, newError(oauth.ErrorKindInvalidConfig, "create client", errors.New("at least one client ID is required"))
 	}
 	return clientIDs, nil
 }
@@ -171,10 +233,5 @@ func parsePrivateKey(value oauth.SensitiveString) (*ecdsa.PrivateKey, error) {
 }
 
 func invalidPrivateKey(cause error) error {
-	return oauth.NewError(
-		oauth.ProviderApple,
-		oauth.ErrorKindInvalidConfig,
-		"create client",
-		cause,
-	)
+	return newError(oauth.ErrorKindInvalidConfig, "create client", cause)
 }

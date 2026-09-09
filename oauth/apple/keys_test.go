@@ -118,7 +118,7 @@ func TestPublicKeyRejectsInvalidResponses(t *testing.T) {
 	validJWK := testJWK(testIdentityPrivateKey(t), "apple-key")
 	invalidExponent := validJWK
 	invalidExponent.Exponent = base64.RawURLEncoding.EncodeToString(big.NewInt(2).Bytes())
-	duplicate, err := json.Marshal(jwkSet{Keys: []jwk{validJWK, validJWK}})
+	duplicate, err := json.Marshal(testJWKSet{Keys: []testJSONJWK{validJWK, validJWK}})
 	require.NoError(t, err)
 	invalidMetadata := validJWK
 	invalidMetadata.KeyType = "EC"
@@ -134,9 +134,9 @@ func TestPublicKeyRejectsInvalidResponses(t *testing.T) {
 		{name: "non-success status", status: http.StatusBadGateway, body: `{}`, target: oauth.ErrPlatform},
 		{name: "malformed JSON", status: http.StatusOK, body: `{`, target: oauth.ErrDecode},
 		{name: "empty key set", status: http.StatusOK, body: `{"keys":[]}`, target: oauth.ErrInvalidResponse},
-		{name: "unsupported key", status: http.StatusOK, body: marshalTestJSON(t, jwkSet{Keys: []jwk{invalidMetadata}}), target: oauth.ErrInvalidResponse},
-		{name: "invalid modulus", status: http.StatusOK, body: marshalTestJSON(t, jwkSet{Keys: []jwk{invalidModulus}}), target: oauth.ErrInvalidResponse},
-		{name: "invalid exponent", status: http.StatusOK, body: marshalTestJSON(t, jwkSet{Keys: []jwk{invalidExponent}}), target: oauth.ErrInvalidResponse},
+		{name: "unsupported key", status: http.StatusOK, body: marshalTestJSON(t, testJWKSet{Keys: []testJSONJWK{invalidMetadata}}), target: oauth.ErrInvalidResponse},
+		{name: "invalid modulus", status: http.StatusOK, body: marshalTestJSON(t, testJWKSet{Keys: []testJSONJWK{invalidModulus}}), target: oauth.ErrInvalidResponse},
+		{name: "invalid exponent", status: http.StatusOK, body: marshalTestJSON(t, testJWKSet{Keys: []testJSONJWK{invalidExponent}}), target: oauth.ErrInvalidResponse},
 		{name: "duplicate key ID", status: http.StatusOK, body: string(duplicate), target: oauth.ErrInvalidResponse},
 	}
 
@@ -158,7 +158,6 @@ func TestFailedRefreshDoesNotReplaceCache(t *testing.T) {
 	var requests atomic.Int32
 	client := newLocalAppleClient(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if requests.Add(1) == 1 {
-			w.Header().Set("Cache-Control", "max-age=0")
 			writeTestJWKS(t, w, key, "apple-key")
 			return
 		}
@@ -168,39 +167,24 @@ func TestFailedRefreshDoesNotReplaceCache(t *testing.T) {
 	publicKey, err := client.publicKey(context.Background(), "apple-key")
 	require.NoError(t, err)
 	client.keys.mu.Lock()
-	cached := client.keys.keys["apple-key"]
+	storage := client.keys.storage
 	client.keys.mu.Unlock()
+	cached, err := publicKeyFromStorage(context.Background(), storage, "apple-key")
+	require.NoError(t, err)
 	assert.Same(t, publicKey, cached)
+	client.keys.mu.Lock()
+	client.keys.expiresAt = testAppleNow().Add(-time.Second)
+	client.keys.mu.Unlock()
 
 	publicKey, err = client.publicKey(context.Background(), "apple-key")
 	assert.Nil(t, publicKey)
 	assert.ErrorIs(t, err, oauth.ErrInvalidResponse)
 	client.keys.mu.Lock()
-	assert.Same(t, cached, client.keys.keys["apple-key"])
+	storage = client.keys.storage
 	client.keys.mu.Unlock()
-}
-
-func TestKeysLifetime(t *testing.T) {
-	for _, test := range []struct {
-		name     string
-		value    string
-		expected time.Duration
-	}{
-		{name: "missing", expected: defaultKeysLifetime},
-		{name: "max age", value: "public, max-age=300", expected: 5 * time.Minute},
-		{name: "quoted", value: `max-age="60"`, expected: time.Minute},
-		{name: "zero", value: "max-age=0", expected: 0},
-		{name: "capped", value: "max-age=999999", expected: maxKeysLifetime},
-		{name: "invalid", value: "max-age=invalid", expected: defaultKeysLifetime},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			header := http.Header{}
-			if test.value != "" {
-				header.Set("Cache-Control", test.value)
-			}
-			assert.Equal(t, test.expected, keysLifetime(header))
-		})
-	}
+	cachedAfterFailure, err := publicKeyFromStorage(context.Background(), storage, "apple-key")
+	require.NoError(t, err)
+	assert.Same(t, cached, cachedAfterFailure)
 }
 
 func marshalTestJSON(t *testing.T, value any) string {
