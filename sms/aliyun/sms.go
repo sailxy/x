@@ -3,7 +3,6 @@ package sms
 import (
 	"encoding/json"
 	"errors"
-	"log"
 
 	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 	dysmsapi "github.com/alibabacloud-go/dysmsapi-20170525/v2/client"
@@ -33,7 +32,10 @@ type SMS struct {
 	templateCode string
 }
 
-func New(c Config) *SMS {
+func New(c Config) (*SMS, error) {
+	if c.AccessKeyID == "" || c.AccessKeySecret == "" || c.Endpoint == "" {
+		return nil, errors.New("access key ID, access key secret, and endpoint are required")
+	}
 	cfg := &openapi.Config{
 		AccessKeyId:     &c.AccessKeyID,
 		AccessKeySecret: &c.AccessKeySecret,
@@ -42,14 +44,14 @@ func New(c Config) *SMS {
 
 	cli, err := dysmsapi.NewClient(cfg)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return &SMS{
 		client:       cli,
 		sigName:      c.SigName,
 		templateCode: c.TemplateCode,
-	}
+	}, nil
 }
 
 func (s *SMS) SendSMS(phone, code string) (*dysmsapi.SendSmsResponse, error) {

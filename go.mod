@@ -10,7 +10,9 @@ require (
 	github.com/alibabacloud-go/dypnsapi-20170525 v1.0.6
 	github.com/alibabacloud-go/dysmsapi-20170525/v2 v2.0.18
 	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
+	github.com/aws/aws-sdk-go-v2 v1.30.3
 	github.com/aws/aws-sdk-go-v2/config v1.27.27
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.27
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.58.3
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.34.3
 	github.com/brianvoe/gofakeit/v7 v7.0.4
@@ -61,9 +63,7 @@ require (
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.6 // indirect
 	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
 	github.com/aliyun/credentials-go v1.3.6 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.30.3 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.3 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.27 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.11 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.15 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.15 // indirect

@@ -2,7 +2,6 @@ package pns
 
 import (
 	"errors"
-	"log"
 
 	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 	dypnsapi "github.com/alibabacloud-go/dypnsapi-20170525/client"
@@ -18,7 +17,10 @@ type PNS struct {
 	client *dypnsapi.Client
 }
 
-func New(c Config) *PNS {
+func New(c Config) (*PNS, error) {
+	if c.AccessKeyID == "" || c.AccessKeySecret == "" || c.Endpoint == "" {
+		return nil, errors.New("access key ID, access key secret, and endpoint are required")
+	}
 	cfg := &openapi.Config{
 		AccessKeyId:     &c.AccessKeyID,
 		AccessKeySecret: &c.AccessKeySecret,
@@ -27,12 +29,12 @@ func New(c Config) *PNS {
 
 	cli, err := dypnsapi.NewClient(cfg)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return &PNS{
 		client: cli,
-	}
+	}, nil
 }
 
 func (u *PNS) GetMobile(token string) (*dypnsapi.GetMobileResponse, error) {
@@ -41,7 +43,6 @@ func (u *PNS) GetMobile(token string) (*dypnsapi.GetMobileResponse, error) {
 	}
 	resp, err := u.client.GetMobile(req)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
