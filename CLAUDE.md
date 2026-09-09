@@ -152,7 +152,7 @@ The project uses pre-commit with gitleaks for secret detection. Configure hooks 
 
 ### Go Version
 
-This project requires Go 1.23.0+ with toolchain go1.24.1.
+This project requires Go 1.25.0+ with toolchain go1.25.14.
 
 ### Dependencies
 
