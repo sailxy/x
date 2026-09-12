@@ -1,4 +1,4 @@
-package pay
+package wechat
 
 import (
 	"context"

@@ -5,7 +5,7 @@
 迁移：将 `github.com/sailxy/x/wechat/pay` 改为 `github.com/sailxy/x/payment/wechat`。本包不提供跨平台统一支付接口。
 
 ```go
-wxpay, err := pay.New(pay.Config{
+wxpay, err := wechat.New(wechat.Config{
 	AppID:                      "wx...",
 	MchID:                      "1900000001",
 	MchCertificateSerialNumber: "cert-serial",
@@ -17,7 +17,7 @@ wxpay, err := pay.New(pay.Config{
 ## App Payment
 
 ```go
-resp, err := wxpay.AppPrepay(ctx, pay.PrepayRequest{
+resp, err := wxpay.AppPrepay(ctx, wechat.PrepayRequest{
 	Description: "membership",
 	OutTradeNo: "order-123",
 	NotifyURL:  "https://example.com/wxpay/notify",
@@ -30,7 +30,7 @@ resp, err := wxpay.AppPrepay(ctx, pay.PrepayRequest{
 PC Web QR-code payment:
 
 ```go
-resp, err := wxpay.NativePrepay(ctx, pay.PrepayRequest{
+resp, err := wxpay.NativePrepay(ctx, wechat.PrepayRequest{
 	Description: "membership",
 	OutTradeNo: "order-123",
 	NotifyURL:  "https://example.com/wxpay/notify",
@@ -41,8 +41,8 @@ resp, err := wxpay.NativePrepay(ctx, pay.PrepayRequest{
 Mobile Web H5 payment:
 
 ```go
-resp, err := wxpay.H5Prepay(ctx, pay.H5PrepayRequest{
-	PrepayRequest: pay.PrepayRequest{
+resp, err := wxpay.H5Prepay(ctx, wechat.H5PrepayRequest{
+	PrepayRequest: wechat.PrepayRequest{
 		Description: "membership",
 		OutTradeNo: "order-123",
 		NotifyURL:  "https://example.com/wxpay/notify",

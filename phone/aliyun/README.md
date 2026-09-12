@@ -3,7 +3,7 @@
 该包通过阿里云号码认证服务，用客户端返回的 access token 换取手机号。
 
 ```go
-client, err := pns.New(pns.Config{
+client, err := aliyun.New(aliyun.Config{
 	AccessKeyID:     "...",
 	AccessKeySecret: "...",
 	Endpoint:        "...",

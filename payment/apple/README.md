@@ -5,7 +5,7 @@
 迁移：将 `github.com/sailxy/x/apple/pay` 改为 `github.com/sailxy/x/payment/apple`。本包不提供跨平台统一支付接口，也不包含订阅或 Apple Pay 能力。
 
 ```go
-applePay := pay.New(pay.Config{
+applePay := apple.New(apple.Config{
 	Endpoint: "https://buy.itunes.apple.com/verifyReceipt",
 	BundleID: "com.example.app",
 })

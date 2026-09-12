@@ -1,4 +1,4 @@
-package sms
+package aliyun
 
 import (
 	"encoding/json"

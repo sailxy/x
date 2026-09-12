@@ -3,7 +3,7 @@
 该包通过阿里云短信服务发送验证码。
 
 ```go
-client, err := sms.New(sms.Config{
+client, err := aliyun.New(aliyun.Config{
 	AccessKeyID:     "...",
 	AccessKeySecret: "...",
 	Endpoint:        "...",

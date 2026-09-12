@@ -1,4 +1,4 @@
-package pns
+package aliyun
 
 import "testing"
 

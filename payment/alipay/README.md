@@ -5,7 +5,7 @@
 迁移：将 `github.com/sailxy/x/alipay/pay` 改为 `github.com/sailxy/x/payment/alipay`。本包不提供跨平台统一支付接口。
 
 ```go
-alipayPay, err := pay.New(pay.Config{
+alipayPay, err := alipay.New(alipay.Config{
 	AppID:              "2021000000000000",
 	PrivateKeyPath:     "/path/to/app_private_key.pem",
 	AlipayPublicKeyPEM: "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
@@ -18,7 +18,7 @@ alipayPay, err := pay.New(pay.Config{
 ## App Payment
 
 ```go
-resp, err := alipayPay.AppPay(ctx, pay.PayRequest{
+resp, err := alipayPay.AppPay(ctx, alipay.PayRequest{
 	Subject:     "membership",
 	OutTradeNo:  "order-123",
 	TotalAmount: "9.90",
@@ -30,8 +30,8 @@ resp, err := alipayPay.AppPay(ctx, pay.PayRequest{
 PC Web payment:
 
 ```go
-resp, err := alipayPay.PagePay(ctx, pay.PagePayRequest{
-	PayRequest: pay.PayRequest{
+resp, err := alipayPay.PagePay(ctx, alipay.PagePayRequest{
+	PayRequest: alipay.PayRequest{
 		Subject:     "membership",
 		OutTradeNo:  "order-123",
 		TotalAmount: "9.90",
@@ -42,8 +42,8 @@ resp, err := alipayPay.PagePay(ctx, pay.PagePayRequest{
 Mobile Web WAP payment:
 
 ```go
-resp, err := alipayPay.WapPay(ctx, pay.WapPayRequest{
-	PayRequest: pay.PayRequest{
+resp, err := alipayPay.WapPay(ctx, alipay.WapPayRequest{
+	PayRequest: alipay.PayRequest{
 		Subject:     "membership",
 		OutTradeNo:  "order-123",
 		TotalAmount: "9.90",
