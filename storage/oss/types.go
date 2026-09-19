@@ -36,6 +36,7 @@ type downloadBucketAPI interface {
 	GetObject(objectKey string, options ...aliyunoss.Option) (io.ReadCloser, error)
 	GetObjectToFile(objectKey, filePath string, options ...aliyunoss.Option) error
 	DeleteObject(objectKey string, options ...aliyunoss.Option) error
+	DeleteObjects(objectKeys []string, options ...aliyunoss.Option) (aliyunoss.DeleteObjectsResult, error)
 }
 
 type signURLResp struct {

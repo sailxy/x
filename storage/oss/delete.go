@@ -14,3 +14,18 @@ func (c *Client) DeleteObject(ctx context.Context, objectKey string) error {
 	}
 	return nil
 }
+
+// DeleteObjects removes multiple objects in one request (at most 1000 keys per
+// OSS call) with the supplied context and returns the keys reported as deleted;
+// keys that do not exist count as deleted, so any requested key missing from the
+// result failed to delete.
+func (c *Client) DeleteObjects(ctx context.Context, objectKeys []string) ([]string, error) {
+	if len(objectKeys) == 0 {
+		return nil, nil
+	}
+	result, err := c.bucket.DeleteObjects(objectKeys, aliyunoss.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("delete objects: %w", err)
+	}
+	return result.DeletedObjects, nil
+}

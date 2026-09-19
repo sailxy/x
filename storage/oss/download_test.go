@@ -15,6 +15,8 @@ type fakeBucket struct {
 	getObjectKey    string
 	deleteObjectKey string
 	deleteOptions   int
+	deleteObjectsKeys    []string
+	deleteObjectsOptions int
 	getObjectToFile struct {
 		key      string
 		filePath string
