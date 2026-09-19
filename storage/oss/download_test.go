@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"context"
 	"io"
 	"os"
 	"strings"
@@ -12,10 +13,29 @@ import (
 
 type fakeBucket struct {
 	getObjectKey    string
+	deleteObjectKey string
+	deleteOptions   int
 	getObjectToFile struct {
 		key      string
 		filePath string
 	}
+}
+
+func (b *fakeBucket) DeleteObject(key string, options ...aliyunoss.Option) error {
+	b.deleteObjectKey = key
+	b.deleteOptions = len(options)
+	return nil
+}
+
+func TestDeleteObjectUsesProvidedContext(t *testing.T) {
+	bucket := &fakeBucket{}
+	client := &Client{bucket: bucket}
+
+	err := client.DeleteObject(context.Background(), "path/to/file.txt")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "path/to/file.txt", bucket.deleteObjectKey)
+	assert.Equal(t, 1, bucket.deleteOptions)
 }
 
 func (b *fakeBucket) SignURL(string, HTTPMethod, int64, ...aliyunoss.Option) (string, error) {
