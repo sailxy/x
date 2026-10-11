@@ -45,9 +45,10 @@ type signURLResp struct {
 }
 
 type SignURLConfig struct {
-	ContentType  string
-	HTTPMethod   HTTPMethod
-	ExpiredInSec int64 // expired in seconds, default 300s
-	Callback     string
-	CallbackVar  string
+	ContentType                string
+	HTTPMethod                 HTTPMethod
+	ExpiredInSec               int64 // expired in seconds, default 300s
+	Callback                   string
+	CallbackVar                string
+	ResponseContentDisposition string // Optional download response header, included in the URL signature.
 }

@@ -17,6 +17,9 @@ func (c *Client) SignURL(key string, cfg SignURLConfig) (*signURLResp, error) {
 	if cfg.CallbackVar != "" {
 		opts = append(opts, aliyunoss.CallbackVar(cfg.CallbackVar))
 	}
+	if cfg.ResponseContentDisposition != "" {
+		opts = append(opts, aliyunoss.ResponseContentDisposition(cfg.ResponseContentDisposition))
+	}
 
 	expiredInSec := cfg.ExpiredInSec
 	if expiredInSec == 0 {
