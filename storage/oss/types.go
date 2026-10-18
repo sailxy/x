@@ -1,21 +1,22 @@
 package oss
 
 import (
-	"io"
+	"time"
 
-	aliyunoss "github.com/aliyun/aliyun-oss-go-sdk/oss"
+	aliyunoss "github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 )
 
 const defaultExpiredInSec int64 = 300
 
-type HTTPMethod = aliyunoss.HTTPMethod
+type HTTPMethod string
 
 const (
-	HTTPGet HTTPMethod = aliyunoss.HTTPGet
-	HTTPPut HTTPMethod = aliyunoss.HTTPPut
+	HTTPGet HTTPMethod = "GET"
+	HTTPPut HTTPMethod = "PUT"
 )
 
 type Config struct {
+	Region          string
 	Endpoint        string
 	BucketName      string
 	AccessKeyID     string
@@ -23,25 +24,20 @@ type Config struct {
 }
 
 type Client struct {
+	region          string
+	sdkClient       *aliyunoss.Client
 	endpoint        string
 	bucketName      string
 	host            string
 	accessKeyID     string
 	accessKeySecret string
-	bucket          downloadBucketAPI
-}
-
-type downloadBucketAPI interface {
-	SignURL(objectKey string, method aliyunoss.HTTPMethod, expiredInSec int64, options ...aliyunoss.Option) (string, error)
-	GetObject(objectKey string, options ...aliyunoss.Option) (io.ReadCloser, error)
-	GetObjectToFile(objectKey, filePath string, options ...aliyunoss.Option) error
-	DeleteObject(objectKey string, options ...aliyunoss.Option) error
-	DeleteObjects(objectKeys []string, options ...aliyunoss.Option) (aliyunoss.DeleteObjectsResult, error)
 }
 
 type signURLResp struct {
-	SignedURL    string
-	ExpiredInSec int64
+	// SignedHeaders must accompany the request, especially for V4 uploads.
+	SignedHeaders map[string]string
+	SignedURL     string
+	ExpiredInSec  int64
 }
 
 type SignURLConfig struct {
@@ -51,4 +47,31 @@ type SignURLConfig struct {
 	Callback                   string
 	CallbackVar                string
 	ResponseContentDisposition string // Optional download response header, included in the URL signature.
+}
+
+// PostPolicyConfig controls the signed restrictions of a V4 browser POST.
+type PostPolicyConfig struct {
+	ExpiredInSec    int64
+	MaxFileSize     int64
+	ForbidOverwrite bool
+	ObjectACL       string
+}
+
+// PostPolicy contains browser form fields, without the access key secret.
+type PostPolicy struct {
+	URL       string
+	Fields    map[string]string
+	ExpiresAt time.Time
+}
+
+// BucketState contains the configured bucket's ACL and versioning status.
+type BucketState struct {
+	ACL              string
+	VersioningStatus string
+}
+
+// ObjectMeta is the size and content type returned by a configured bucket HEAD.
+type ObjectMeta struct {
+	Size        int64
+	ContentType string
 }

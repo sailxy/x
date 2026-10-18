@@ -1,41 +1,56 @@
 package oss
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
 	"encoding/base64"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestPostInfo(t *testing.T) {
-	requireAliyunOSSEnv(t)
-
-	client, err := new()
-	if !assert.NoError(t, err) {
-		return
+func TestSignPostPolicyV4_RestrictionsAndIndependentVector(t *testing.T) {
+	client, err := New(Config{Endpoint: "oss-cn-hangzhou.aliyuncs.com", BucketName: "private-test", Region: "cn-hangzhou", AccessKeyID: "test-ak", AccessKeySecret: "test-secret"})
+	require.NoError(t, err)
+	now := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
+	const prefix = "education/uploads/123/2026/10/18/1792324800-0123456789abcdef0123456789abcdef/"
+	cfg := PostPolicyConfig{ExpiredInSec: 600, MaxFileSize: 20971520, ForbidOverwrite: true, ObjectACL: "private"}
+	post, err := client.signPostPolicyV4(prefix, cfg, now)
+	require.NoError(t, err)
+	require.Equal(t, "https://private-test.oss-cn-hangzhou.aliyuncs.com/", post.URL)
+	require.Equal(t, now.Add(10*time.Minute), post.ExpiresAt)
+	// Independently calculated with Python HMAC-SHA256.
+	require.Equal(t, "d0431ac716b6f84229308576f65b036c5d13965cfb5fe2a30090cfe185672317", post.Fields["x-oss-signature"])
+	raw, err := base64.StdEncoding.DecodeString(post.Fields["policy"])
+	require.NoError(t, err)
+	for _, condition := range []string{`{"bucket":"private-test"}`, `["starts-with","$key","` + prefix + `"]`, `["content-length-range",0,20971520]`, `{"x-oss-forbid-overwrite":"true"}`, `{"x-oss-object-acl":"private"}`, `{"x-oss-date":"20261018T120000Z"}`, `{"x-oss-signature-version":"OSS4-HMAC-SHA256"}`, `{"x-oss-credential":"test-ak/20261018/cn-hangzhou/oss/aliyun_v4_request"}`, `{"success_action_status":"204"}`} {
+		require.Contains(t, string(raw), condition)
 	}
-	resp, err := client.PostInfo("test")
-	if assert.NoError(t, err) {
-		t.Log("access key id", resp.AccessKeyId)
-		t.Log("callback", resp.Callback)
-		t.Log("directory", resp.Directory)
-		t.Log("expire", resp.Expire)
-		t.Log("host", resp.Host)
-		t.Log("policy", resp.Policy)
-		t.Log("signature", resp.Signature)
-	}
+	require.NotContains(t, string(raw), "test-secret")
+	require.NotContains(t, string(raw), "content-type")
+	cfg.ForbidOverwrite = false
+	cfg.ObjectACL = ""
+	cfg.ExpiredInSec = 60
+	cfg.MaxFileSize = 100
+	post, err = client.SignPostPolicy("avatars/", cfg)
+	require.NoError(t, err)
+	require.NotContains(t, post.Fields, "x-oss-forbid-overwrite")
+	require.NotContains(t, post.Fields, "x-oss-object-acl")
+	raw, err = base64.StdEncoding.DecodeString(post.Fields["policy"])
+	require.NoError(t, err)
+	require.Contains(t, string(raw), `["content-length-range",0,100]`)
 }
 
-func TestSignPostPolicy(t *testing.T) {
-	policy := base64.StdEncoding.EncodeToString([]byte(`{"expiration":"2026-04-23T00:00:00Z"}`))
-	secret := "secret"
-
-	mac := hmac.New(sha1.New, []byte(secret))
-	_, err := mac.Write([]byte(policy))
-	assert.NoError(t, err)
-
-	want := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	assert.Equal(t, want, signPostPolicy(policy, secret))
+func TestSignPostPolicyV4_RejectsInvalidConfiguration(t *testing.T) {
+	client, err := New(Config{Endpoint: "oss-cn-hangzhou.aliyuncs.com", BucketName: "private-test", Region: "cn-hangzhou", AccessKeyID: "test-ak", AccessKeySecret: "test-secret"})
+	require.NoError(t, err)
+	for _, cfg := range []PostPolicyConfig{{}, {ExpiredInSec: 600, MaxFileSize: 0}, {ExpiredInSec: -1, MaxFileSize: 1}, {ExpiredInSec: 1<<63 - 1, MaxFileSize: 1}, {ExpiredInSec: 600, MaxFileSize: 1, ObjectACL: "unknown"}} {
+		_, err := client.SignPostPolicy("uploads/", cfg)
+		require.Error(t, err)
+	}
+	cfg := PostPolicyConfig{ExpiredInSec: 600, MaxFileSize: 100}
+	_, err = client.SignPostPolicy("", cfg)
+	require.Error(t, err)
+	client.region = ""
+	_, err = client.SignPostPolicy("uploads/", cfg)
+	require.Error(t, err)
 }

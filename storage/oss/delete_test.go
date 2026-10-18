@@ -2,37 +2,50 @@ package oss
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 
-	aliyunoss "github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func (b *fakeBucket) DeleteObjects(objectKeys []string, options ...aliyunoss.Option) (aliyunoss.DeleteObjectsResult, error) {
-	b.deleteObjectsKeys = objectKeys
-	b.deleteObjectsOptions = len(options)
-	return aliyunoss.DeleteObjectsResult{DeletedObjects: objectKeys}, nil
-}
-
 func TestDeleteObjectsUsesProvidedContextAndReturnsDeletedKeys(t *testing.T) {
-	bucket := &fakeBucket{}
-	client := &Client{bucket: bucket}
-
-	keys, err := client.DeleteObjects(context.Background(), []string{"path/to/a.txt", "path/to/b.txt"})
-
-	assert.NoError(t, err)
-	assert.Equal(t, []string{"path/to/a.txt", "path/to/b.txt"}, keys)
-	assert.Equal(t, []string{"path/to/a.txt", "path/to/b.txt"}, bucket.deleteObjectsKeys)
-	assert.Equal(t, 1, bucket.deleteObjectsOptions)
+	calls := 0
+	client := localOSSClient(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		require.Equal(t, http.MethodPost, r.Method)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.Contains(t, string(body), "a.txt")
+		require.Contains(t, string(body), "b.txt")
+		require.NotContains(t, string(body), "<Quiet>true</Quiet>")
+		_, err = fmt.Fprint(w, `<DeleteResult><Deleted><Key>path/a.txt</Key></Deleted></DeleteResult>`)
+		require.NoError(t, err)
+	})
+	keys, err := client.DeleteObjects(context.Background(), []string{"path/a.txt", "path/b.txt"})
+	require.NoError(t, err)
+	require.Equal(t, []string{"path/a.txt"}, keys)
+	require.Equal(t, 1, calls)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = client.DeleteObjects(ctx, []string{"path/a.txt"})
+	require.ErrorIs(t, err, context.Canceled)
 }
-
 func TestDeleteObjectsSkipsSDKCallWithoutKeys(t *testing.T) {
-	bucket := &fakeBucket{}
-	client := &Client{bucket: bucket}
-
-	keys, err := client.DeleteObjects(context.Background(), nil)
-
-	assert.NoError(t, err)
-	assert.Nil(t, keys)
-	assert.Empty(t, bucket.deleteObjectsKeys)
+	keys, err := (&Client{}).DeleteObjects(context.Background(), nil)
+	require.NoError(t, err)
+	require.Nil(t, keys)
+}
+func TestDeleteObjectUsesProvidedContext(t *testing.T) {
+	client := localOSSClient(t, func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodDelete, r.Method)
+		require.True(t, strings.HasSuffix(r.URL.Path, "/path/a.txt"))
+		w.WriteHeader(http.StatusNoContent)
+	})
+	require.NoError(t, client.DeleteObject(context.Background(), "path/a.txt"))
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	require.ErrorIs(t, client.DeleteObject(ctx, "path/a.txt"), context.Canceled)
 }

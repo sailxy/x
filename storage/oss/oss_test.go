@@ -71,3 +71,12 @@ func TestParseObjectKeyFromURL(t *testing.T) {
 		})
 	}
 }
+
+func TestObjectBaseURL_NormalizesEndpointAndTrailingSlash(t *testing.T) {
+	for _, endpoint := range []string{"oss-cn-hangzhou.aliyuncs.com", "https://oss-cn-hangzhou.aliyuncs.com/"} {
+		client, err := New(Config{Endpoint: endpoint, BucketName: "private-test", Region: "cn-hangzhou", AccessKeyID: "test-ak", AccessKeySecret: "test-secret"})
+		if assert.NoError(t, err) {
+			assert.Equal(t, "https://private-test.oss-cn-hangzhou.aliyuncs.com/", client.ObjectBaseURL())
+		}
+	}
+}

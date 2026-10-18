@@ -1,11 +1,14 @@
 package oss
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"strings"
+
+	aliyunoss "github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 )
 
 func (c *Client) DownloadURL(rawURL string) (io.ReadCloser, error) {
@@ -14,12 +17,12 @@ func (c *Client) DownloadURL(rawURL string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("parse object key from url: %w", err)
 	}
 
-	rc, err := c.bucket.GetObject(key)
+	result, err := c.sdkClient.GetObject(context.Background(), &aliyunoss.GetObjectRequest{Bucket: aliyunoss.Ptr(c.bucketName), Key: aliyunoss.Ptr(key)})
 	if err != nil {
 		return nil, fmt.Errorf("download object %q: %w", key, err)
 	}
 
-	return rc, nil
+	return result.Body, nil
 }
 
 func (c *Client) DownloadURLToFile(rawURL, filePath string) error {
@@ -28,7 +31,9 @@ func (c *Client) DownloadURLToFile(rawURL, filePath string) error {
 		return fmt.Errorf("parse object key from url: %w", err)
 	}
 
-	if err := c.bucket.GetObjectToFile(key, filePath); err != nil {
+	if _, err := aliyunoss.NewDownloader(c.sdkClient, func(options *aliyunoss.DownloaderOptions) {
+		options.ClientOptions = append(options.ClientOptions, validateHeadSize)
+	}).DownloadFile(context.Background(), &aliyunoss.GetObjectRequest{Bucket: aliyunoss.Ptr(c.bucketName), Key: aliyunoss.Ptr(key)}, filePath); err != nil {
 		return fmt.Errorf("download object %q to file: %w", key, err)
 	}
 

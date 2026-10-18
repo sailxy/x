@@ -1,6 +1,7 @@
 package oss
 
 import (
+	"net/http"
 	"net/url"
 	"strconv"
 	"testing"
@@ -92,4 +93,26 @@ func TestParseHTTPMethod(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSignURL_V4PreservesRequiredHeadersAndOptions(t *testing.T) {
+	c, err := New(Config{Endpoint: "https://oss-cn-hangzhou.aliyuncs.com", BucketName: "private-test", Region: "cn-hangzhou", AccessKeyID: "test-ak", AccessKeySecret: "test-secret"})
+	require.NoError(t, err)
+	signed, err := c.SignURL("proof.pdf", SignURLConfig{HTTPMethod: HTTPPut, ExpiredInSec: 60, ContentType: "application/pdf", Callback: "callback", CallbackVar: "vars"})
+	require.NoError(t, err)
+	parsed, err := url.Parse(signed.SignedURL)
+	require.NoError(t, err)
+	require.NotEmpty(t, parsed.Query().Get("x-oss-signature"))
+	require.Equal(t, "60", parsed.Query().Get("x-oss-expires"))
+	headers := http.Header{}
+	for name, value := range signed.SignedHeaders {
+		headers.Set(name, value)
+	}
+	require.Equal(t, "application/pdf", headers.Get("Content-Type"))
+	require.Equal(t, "callback", headers.Get("x-oss-callback"))
+	require.Equal(t, "vars", headers.Get("x-oss-callback-var"))
+	_, err = c.SignURL("proof.pdf", SignURLConfig{ExpiredInSec: -1})
+	require.Error(t, err)
+	_, err = c.SignURL("proof.pdf", SignURLConfig{ExpiredInSec: 1<<63 - 1})
+	require.Error(t, err)
 }
