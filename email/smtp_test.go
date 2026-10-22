@@ -1,7 +1,9 @@
 package email
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -12,8 +14,10 @@ func TestSend(t *testing.T) {
 		Port:     465,
 		Username: "name@example.com",
 		Password: "password",
+		TLSMode:  TLSModeImplicit,
+		Timeout:  30 * time.Second,
 	})
-	err := smtpDialer.Send(SendConfig{
+	err := smtpDialer.Send(context.Background(), SendConfig{
 		FromAddr: "name@example.com",
 		FromName: "From",
 		ToAddr:   "to@example.com",
